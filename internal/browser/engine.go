@@ -6,25 +6,23 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/peder1981/bagus-browser-go/internal/storage"
 )
 
 // Engine representa o motor principal do navegador
 type Engine struct {
-	storage *storage.Manager
+	storage *StorageManager
 	debug   bool
 	tabs    []*Tab
 }
 
 // NewEngine cria uma nova instância do motor do navegador
-func NewEngine(storageManager *storage.Manager, debug bool) (*Engine, error) {
-	if storageManager == nil {
+func NewEngine(storage *StorageManager, debug bool) (*Engine, error) {
+	if storage == nil {
 		return nil, fmt.Errorf("storage manager não pode ser nil")
 	}
 
 	engine := &Engine{
-		storage: storageManager,
+		storage: storage,
 		debug:   debug,
 		tabs:    make([]*Tab, 0),
 	}

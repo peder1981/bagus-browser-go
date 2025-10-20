@@ -1,12 +1,13 @@
 package browser
 
 import (
-	"github.com/peder1981/bagus-browser-go/internal/storage"
 	"testing"
 )
 
 func setupTestEngine(t *testing.T) *Engine {
-	manager, err := storage.NewManager("default", "")
+	// Cria storage manager temporário
+	tmpDir := t.TempDir()
+	manager, err := NewStorageManager(tmpDir)
 	if err != nil {
 		t.Fatalf("Erro ao criar storage manager: %v", err)
 	}
@@ -18,7 +19,8 @@ func setupTestEngine(t *testing.T) *Engine {
 }
 
 func TestNewEngine(t *testing.T) {
-	manager, _ := storage.NewManager("default", "")
+	tmpDir := t.TempDir()
+	manager, _ := NewStorageManager(tmpDir)
 	engine, err := NewEngine(manager, false)
 
 	if err != nil {

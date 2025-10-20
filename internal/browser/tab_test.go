@@ -1,12 +1,12 @@
 package browser
 
 import (
-	"github.com/peder1981/bagus-browser-go/internal/storage"
 	"testing"
 )
 
 func setupTestTab(t *testing.T) (*Engine, *Tab) {
-	manager, _ := storage.NewManager("default", "")
+	tmpDir := t.TempDir()
+	manager, _ := NewStorageManager(tmpDir)
 	engine, _ := NewEngine(manager, false)
 	tab, _ := engine.NewTab("")
 	return engine, tab

@@ -5,7 +5,9 @@
 *.so
 *.dylib
 bagus
-bagus-*
+bagus-browser
+!bagus-browser.desktop
+!assets/bagus-browser.desktop
 
 # Diretórios de build
 build/

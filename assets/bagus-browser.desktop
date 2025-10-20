@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Bagus Browser
+GenericName=Web Browser
+Comment=Browser Seguro e Privado em Go
+Icon=bagus-browser
+Exec=bagus-browser %U
+Terminal=false
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+StartupNotify=true
+StartupWMClass=Bagus Browser
+Keywords=Internet;WWW;Browser;Web;Explorer;

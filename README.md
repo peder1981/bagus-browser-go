@@ -1,6 +1,11 @@
 # Bagus Browser Go
 
-**Browser seguro e multiplataforma focado em privacidade - Versão Go**
+Browser seguro e multiplataforma focado em privacidade, escrito em Go.
+
+## 🚀 Status do Projeto
+
+**Versão:** 2.0.0-alpha  
+**Status:** ✅ Implementação Completa - Pronto para Uso
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -16,6 +21,24 @@ Esta é a versão **multiplataforma** do Bagus Browser, reescrita em Go para ofe
 - ✅ **Binário Único**: Sem dependências externas
 - ✅ **Menor Consumo**: Footprint de memória reduzido
 - ✅ **Segurança Nativa**: Criptografia e isolamento em nível de sistema
+
+## 📋 Funcionalidades
+
+### ✅ Implementadas
+- 🔒 **Segurança e Privacidade** - Validação de entrada, bloqueador de domínios
+- 🌐 **Multiplataforma** - Linux, Windows, macOS (webview nativo)
+- ⚡ **Performance** - Escrito em Go, binário único de 3.7MB
+- 🗂️ **Sistema de Abas** - Múltiplas abas de navegação
+- 📜 **Histórico** - Busca e sugestões automáticas
+- ⚙️ **Configurável** - 40+ configurações de segurança
+- 🛡️ **Bloqueador** - Bloqueio de domínios maliciosos
+- 💾 **Persistência** - Histórico e configurações salvos
+
+### 🚧 Planejadas (Futuro)
+- 🎨 **Interface Avançada** - Painéis laterais customizados
+- 🔧 **Extensível** - Sistema de plugins e extensões
+- 🔐 **Proxy** - Suporte SOCKS5/HTTP configurável
+- 🛠️ **DevTools** - Ferramentas de desenvolvedor integradas
 
 ## 🔄 Relação com a Versão Python
 
