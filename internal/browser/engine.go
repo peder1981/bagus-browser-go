@@ -36,17 +36,17 @@ func NewEngine(storageManager *storage.Manager, debug bool) (*Engine, error) {
 // Run inicia o navegador
 func (e *Engine) Run() error {
 	log.Println("Browser engine executando...")
-	
+
 	// TODO: Implementar UI e WebView
 	// Por enquanto, apenas um placeholder
-	
+
 	fmt.Println("🚀 Bagus Browser está rodando!")
 	fmt.Println("📁 Dados armazenados em:", e.storage.GetDataDir())
 	fmt.Println()
 	fmt.Println("⚠️  Esta é uma versão alpha - UI será implementada em breve")
 	fmt.Println()
 	fmt.Println("Pressione Ctrl+C para sair")
-	
+
 	// Manter o programa rodando
 	select {}
 }
@@ -57,13 +57,13 @@ func (e *Engine) NewTab(url string) (*Tab, error) {
 		URL:    url,
 		engine: e,
 	}
-	
+
 	e.tabs = append(e.tabs, tab)
-	
+
 	if e.debug {
 		log.Printf("Nova aba criada: %s", url)
 	}
-	
+
 	return tab, nil
 }
 
@@ -77,13 +77,13 @@ func (e *Engine) CloseTab(index int) error {
 	if index < 0 || index >= len(e.tabs) {
 		return fmt.Errorf("índice de aba inválido: %d", index)
 	}
-	
+
 	// Remove a aba
 	e.tabs = append(e.tabs[:index], e.tabs[index+1:]...)
-	
+
 	if e.debug {
 		log.Printf("Aba %d fechada", index)
 	}
-	
+
 	return nil
 }
