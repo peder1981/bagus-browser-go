@@ -1,0 +1,61 @@
+# Binários
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bagus
+bagus-*
+
+# Diretórios de build
+build/
+dist/
+bin/
+*.test
+
+# Arquivos de teste
+*.out
+coverage.out
+coverage.html
+
+# Dependências
+vendor/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Go workspace
+go.work
+go.work.sum
+
+# Dados de usuário (desenvolvimento)
+.bagus/
+*.img
+
+# Logs
+*.log
+
+# Temporários
+tmp/
+temp/
+*.tmp
+
+# Configurações locais
+config.local.yaml
+*.local.yaml
+
+# Secrets
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+
+# OS
+Thumbs.db
+.Trash-*
