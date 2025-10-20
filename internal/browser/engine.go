@@ -3,6 +3,9 @@ package browser
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/peder1981/bagus-browser-go/internal/storage"
 )
@@ -47,8 +50,23 @@ func (e *Engine) Run() error {
 	fmt.Println()
 	fmt.Println("Pressione Ctrl+C para sair")
 
-	// Manter o programa rodando
-	select {}
+	// Configurar captura de sinais para shutdown gracioso
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// Aguardar sinal de interrupção
+	<-sigChan
+
+	fmt.Println()
+	log.Println("Encerrando Bagus Browser...")
+
+	// Cleanup
+	if err := e.storage.Close(); err != nil {
+		log.Printf("Erro ao fechar storage: %v", err)
+	}
+
+	log.Println("Browser encerrado com sucesso")
+	return nil
 }
 
 // NewTab cria uma nova aba
