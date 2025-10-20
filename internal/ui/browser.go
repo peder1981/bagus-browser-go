@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"path/filepath"
+	"strings"
 
 	"github.com/peder1981/bagus-browser-go/internal/browser"
 	"github.com/peder1981/bagus-browser-go/internal/config"
@@ -139,6 +141,11 @@ func (b *Browser) bindFunctions() {
 		data, _ := json.Marshal(b.tabs)
 		return string(data)
 	})
+
+	// Processar input da barra de navegação
+	b.w.Bind("processInputGo", func(input string) string {
+		return b.processInput(input)
+	})
 }
 
 // newTab cria nova aba (simplificado - navega diretamente)
@@ -148,6 +155,36 @@ func (b *Browser) newTab(url string) {
 	}
 
 	b.navigate(url)
+}
+
+// processInput processa input da barra de navegação
+// Retorna a URL final para navegação
+func (b *Browser) processInput(input string) string {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return ""
+	}
+
+	// Verifica se parece com uma URL
+	isURL := strings.Contains(input, ".") && 
+		(strings.HasPrefix(input, "http://") || 
+		 strings.HasPrefix(input, "https://") ||
+		 !strings.Contains(input, " "))
+
+	if isURL {
+		// Adiciona protocolo se necessário
+		if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
+			input = "https://" + input
+		}
+		// Valida URL
+		if _, err := url.Parse(input); err == nil {
+			return input
+		}
+	}
+
+	// Se não for URL, faz busca no DuckDuckGo
+	searchURL := "https://duckduckgo.com/?q=" + url.QueryEscape(input)
+	return searchURL
 }
 
 // navigate navega para URL
@@ -333,8 +370,9 @@ func (b *Browser) generateHTML() string {
         <button onclick="goBack()">◀</button>
         <button onclick="goForward()">▶</button>
         <button onclick="reload()">⟳</button>
-        <input type="text" id="urlBar" placeholder="Digite uma URL..." 
-               onkeyup="handleUrlInput(event)" onkeydown="if(event.key==='Enter') navigate()">
+        <input type="text" id="urlBar" placeholder="Digite uma URL ou termo de busca..." 
+               onkeyup="handleUrlInput(event)" onkeydown="if(event.key==='Enter') navigate()"
+               onfocus="hideSuggestions()">
         <button onclick="newTab()">+ Nova Aba</button>
     </div>
     <div class="tabs" id="tabs"></div>
@@ -353,10 +391,21 @@ func (b *Browser) generateHTML() string {
         }
 
         function navigate() {
-            const url = document.getElementById('urlBar').value;
-            if (url) {
-                navigateGo(url);
+            const input = document.getElementById('urlBar').value.trim();
+            if (!input) return;
+            
+            // Oculta sugestões
+            hideSuggestions();
+            
+            // Processa input (URL ou busca)
+            const finalUrl = processInputGo(input);
+            if (finalUrl) {
+                navigateGo(finalUrl);
             }
+        }
+        
+        function hideSuggestions() {
+            document.getElementById('suggestions').style.display = 'none';
         }
 
         function goBack() { goBackGo(); }
@@ -394,9 +443,20 @@ func (b *Browser) generateHTML() string {
         }
 
         function handleUrlInput(event) {
-            const query = event.target.value;
+            // Se pressionar Enter, navega
+            if (event.key === 'Enter') {
+                return;
+            }
+            
+            // Se pressionar Escape, oculta sugestões
+            if (event.key === 'Escape') {
+                hideSuggestions();
+                return;
+            }
+            
+            const query = event.target.value.trim();
             if (query.length < 2) {
-                document.getElementById('suggestions').style.display = 'none';
+                hideSuggestions();
                 return;
             }
 
@@ -412,23 +472,34 @@ func (b *Browser) generateHTML() string {
         function showSuggestions(results) {
             const suggestionsDiv = document.getElementById('suggestions');
             if (!results || results.length === 0) {
-                suggestionsDiv.style.display = 'none';
+                hideSuggestions();
                 return;
             }
 
             suggestionsDiv.innerHTML = '';
-            results.forEach(entry => {
+            results.slice(0, 10).forEach(entry => {
                 const div = document.createElement('div');
                 div.className = 'suggestion';
-                div.textContent = entry.URL || entry.url;
+                const url = entry.URL || entry.url;
+                const title = entry.Title || entry.title || url;
+                
+                div.innerHTML = 
+                    '<div style="font-weight: bold; margin-bottom: 2px;">' + escapeHtml(title) + '</div>' +
+                    '<div style="font-size: 12px; color: #aaa;">' + escapeHtml(url) + '</div>';
+                
                 div.onclick = () => {
-                    document.getElementById('urlBar').value = entry.URL || entry.url;
+                    document.getElementById('urlBar').value = url;
                     navigate();
-                    suggestionsDiv.style.display = 'none';
                 };
                 suggestionsDiv.appendChild(div);
             });
             suggestionsDiv.style.display = 'block';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Inicialização
