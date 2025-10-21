@@ -113,6 +113,18 @@ bagus          # Se instalou manualmente
 - Dados armazenados localmente
 - Código 100% open source
 
+## ⌨️ Atalhos de Teclado
+
+O Bagus Browser suporta atalhos de teclado para navegação rápida:
+
+- **Ctrl+L** - Navegar para URL
+- **Alt+←** - Voltar
+- **Alt+→** - Avançar  
+- **Ctrl+R / F5** - Recarregar
+- **Ctrl+H** - Ver histórico
+
+[Ver todos os atalhos](docs/KEYBOARD_SHORTCUTS.md)
+
 ## 📚 Documentação
 
 ### Guias de Instalação

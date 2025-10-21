@@ -52,6 +52,12 @@ Documentação específica da versão CEF.
 - **[README_CEF.md](cef/README_CEF.md)** - Documentação CEF
 - **[CEF_STATUS.md](cef/CEF_STATUS.md)** - Status da implementação
 
+### ⌨️ Atalhos e Uso
+Guias de uso e atalhos de teclado.
+
+- **[KEYBOARD_SHORTCUTS.md](KEYBOARD_SHORTCUTS.md)** - Atalhos de teclado
+- **[KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)** - Limitações conhecidas
+
 ### 📦 [archive/](archive/) - Arquivo
 Status reports e documentos históricos.
 

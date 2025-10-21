@@ -2,7 +2,6 @@ package ui
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/url"
 	"path/filepath"
@@ -70,6 +69,9 @@ func (b *BrowserSingleWindow) Run() error {
 	// Bind funções
 	b.bindFunctions()
 
+	// Injeta controles via JavaScript
+	b.injectControls()
+
 	// Navega diretamente para URL inicial
 	initialURL := b.config.Default.URL
 	if initialURL == "" {
@@ -101,6 +103,69 @@ func (b *BrowserSingleWindow) bindFunctions() {
 	b.w.Bind("processInputGo", func(input string) string {
 		return b.processInput(input)
 	})
+}
+
+// injectControls injeta controles de navegação via JavaScript
+func (b *BrowserSingleWindow) injectControls() {
+	js := `
+		(function() {
+			// Previne múltiplas injeções
+			if (window.bagusControlsInjected) return;
+			window.bagusControlsInjected = true;
+
+			// Atalhos de teclado
+			document.addEventListener('keydown', function(e) {
+				// Ctrl+L - Abrir diálogo de navegação
+				if (e.ctrlKey && e.key === 'l') {
+					e.preventDefault();
+					var url = prompt('Digite uma URL ou termo de busca:', window.location.href);
+					if (url && window.navigateGo) {
+						navigateGo(url);
+					}
+				}
+				
+				// Ctrl+R ou F5 - Recarregar
+				if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
+					e.preventDefault();
+					window.location.reload();
+				}
+				
+				// Alt+← - Voltar
+				if (e.altKey && e.key === 'ArrowLeft') {
+					e.preventDefault();
+					window.history.back();
+				}
+				
+				// Alt+→ - Avançar
+				if (e.altKey && e.key === 'ArrowRight') {
+					e.preventDefault();
+					window.history.forward();
+				}
+				
+				// Ctrl+H - Mostrar histórico
+				if (e.ctrlKey && e.key === 'h') {
+					e.preventDefault();
+					if (window.searchHistoryGo) {
+						var results = searchHistoryGo('');
+						console.log('Histórico:', results);
+						alert('Histórico disponível no console (F12)');
+					}
+				}
+			});
+
+			// Mensagem de boas-vindas
+			console.log('%c🌐 Bagus Browser v2.0.0', 'font-size: 20px; font-weight: bold; color: #0078d4;');
+			console.log('%cAtalhos de Teclado:', 'font-size: 14px; font-weight: bold; margin-top: 10px;');
+			console.log('  Ctrl+L     - Navegar para URL');
+			console.log('  Ctrl+R/F5  - Recarregar página');
+			console.log('  Alt+←      - Voltar');
+			console.log('  Alt+→      - Avançar');
+			console.log('  Ctrl+H     - Ver histórico');
+			console.log('%cNavegação via código:', 'font-size: 14px; font-weight: bold; margin-top: 10px;');
+			console.log('  navigateGo("https://exemplo.com")');
+		})();
+	`
+	b.w.Eval(js)
 }
 
 // navigate processa e navega para URL
@@ -165,110 +230,4 @@ func (b *BrowserSingleWindow) processInput(input string) string {
 	// Se não for URL, faz busca no DuckDuckGo
 	searchURL := "https://duckduckgo.com/?q=" + url.QueryEscape(input)
 	return searchURL
-}
-
-// generateHTML gera HTML com barra de navegação e iframe
-func (b *BrowserSingleWindow) generateHTML() string {
-	defaultURL := b.config.Default.URL
-	if defaultURL == "" {
-		defaultURL = "https://duckduckgo.com"
-	}
-	
-	return fmt.Sprintf(`<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Bagus Browser</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-        #nav-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 50px;
-            background: #2d2d2d;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            z-index: 1000;
-        }
-        #content-frame {
-            position: fixed;
-            top: 50px;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border: none;
-            width: 100%%;
-            height: calc(100%% - 50px);
-        }
-        .nav-btn {
-            padding: 8px 16px;
-            background: #0078d4;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            min-width: 40px;
-        }
-        .nav-btn:hover { background: #106ebe; }
-        #url-input {
-            flex: 1;
-            padding: 10px 15px;
-            background: #3c3c3c;
-            border: 1px solid #555;
-            border-radius: 4px;
-            color: #fff;
-            font-size: 15px;
-        }
-        #url-input:focus {
-            outline: none;
-            border-color: #0078d4;
-        }
-    </style>
-    <script>
-        function navigate(url) {
-            var frame = document.getElementById('content-frame');
-            var urlInput = document.getElementById('url-input');
-            if (frame && url) {
-                frame.src = url;
-                if (urlInput) urlInput.value = url;
-            }
-        }
-
-        async function handleUrlInput(event) {
-            if (event.key === 'Enter') {
-                var input = event.target.value.trim();
-                if (input && window.navigateGo) {
-                    try {
-                        var url = await navigateGo(input);
-                        if (url) navigate(url);
-                    } catch (e) {
-                        console.error('Erro ao navegar:', e);
-                    }
-                }
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', function() {
-            // Navega para URL inicial
-            navigate('%s');
-        });
-    </script>
-</head>
-<body>
-    <div id="nav-bar">
-        <button class="nav-btn" onclick="document.getElementById('content-frame').contentWindow.history.back()" title="Voltar">◀</button>
-        <button class="nav-btn" onclick="document.getElementById('content-frame').contentWindow.history.forward()" title="Avançar">▶</button>
-        <button class="nav-btn" onclick="document.getElementById('content-frame').contentWindow.location.reload()" title="Recarregar">⟳</button>
-        <input type="text" id="url-input" placeholder="Digite uma URL ou termo de busca..." onkeydown="handleUrlInput(event)" value="%s">
-    </div>
-    <iframe id="content-frame" src="%s"></iframe>
-</body>
-</html>`, defaultURL, defaultURL, defaultURL)
 }
