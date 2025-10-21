@@ -23,7 +23,7 @@ func NewCoordinator() *Coordinator {
 	}
 }
 
-// Start inicia o coordenador e ambas as janelas
+// Start inicia o coordenador - apenas WebView (sem janela de controle por enquanto)
 func (c *Coordinator) Start() error {
 	c.mu.Lock()
 	if c.running {
@@ -33,32 +33,18 @@ func (c *Coordinator) Start() error {
 	c.running = true
 	c.mu.Unlock()
 
-	// Criar janela de conteúdo
+	// Criar janela de conteúdo (WebView simples)
 	contentWindow, err := NewContentWindow(c.channel)
 	if err != nil {
 		return err
 	}
 	c.contentWindow = contentWindow
 
-	// Criar janela de controle
-	controlWindow, err := NewControlWindow(c.channel)
-	if err != nil {
-		return err
-	}
-	c.controlWindow = controlWindow
-
 	// Iniciar processamento de mensagens
 	go c.processMessages()
 
-	// Iniciar janela de conteúdo em goroutine
-	go func() {
-		if err := c.contentWindow.Run(); err != nil {
-			log.Printf("Erro na janela de conteúdo: %v", err)
-		}
-	}()
-
-	// Iniciar janela de controle (bloqueia até fechar)
-	if err := c.controlWindow.Run(); err != nil {
+	// Iniciar janela de conteúdo (bloqueia até fechar)
+	if err := c.contentWindow.Run(); err != nil {
 		return err
 	}
 

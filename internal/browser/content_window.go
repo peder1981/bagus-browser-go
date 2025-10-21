@@ -27,8 +27,11 @@ func NewContentWindow(channel *ipc.Channel) (*ContentWindow, error) {
 	}
 
 	// Configurar janela
-	w.SetTitle("Bagus Browser - Conteúdo")
+	w.SetTitle("Bagus Browser v3.0.0")
 	w.SetSize(1200, 800, webview.HintNone)
+
+	// Injetar controles de navegação
+	w.Init(cw.getNavigationScript())
 
 	return cw, nil
 }
@@ -120,6 +123,58 @@ func (cw *ContentWindow) Stop() {
 // Close fecha a janela
 func (cw *ContentWindow) Close() {
 	cw.webview.Terminate()
+}
+
+// getNavigationScript retorna o script de controles de navegação
+func (cw *ContentWindow) getNavigationScript() string {
+	return `
+		(function() {
+			// Previne múltiplas injeções
+			if (window.bagusControlsInjected) return;
+			window.bagusControlsInjected = true;
+
+			// Atalhos de teclado
+			document.addEventListener('keydown', function(e) {
+				// Ctrl+L - Navegar
+				if (e.ctrlKey && e.key === 'l') {
+					e.preventDefault();
+					var url = prompt('Digite uma URL ou termo de busca:', window.location.href);
+					if (url) {
+						window.location.href = url.includes(' ') 
+							? 'https://duckduckgo.com/?q=' + encodeURIComponent(url)
+							: (url.startsWith('http') ? url : 'https://' + url);
+					}
+				}
+				
+				// Ctrl+R ou F5 - Recarregar
+				if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
+					e.preventDefault();
+					window.location.reload();
+				}
+				
+				// Alt+← - Voltar
+				if (e.altKey && e.key === 'ArrowLeft') {
+					e.preventDefault();
+					window.history.back();
+				}
+				
+				// Alt+→ - Avançar
+				if (e.altKey && e.key === 'ArrowRight') {
+					e.preventDefault();
+					window.history.forward();
+				}
+			});
+
+			// Mensagem de boas-vindas
+			console.log('%c🌐 Bagus Browser v3.0.0', 'font-size: 20px; font-weight: bold; color: #0078d4;');
+			console.log('%cAtalhos de Teclado:', 'font-size: 14px; font-weight: bold; margin-top: 10px;');
+			console.log('  Ctrl+L     - Navegar para URL');
+			console.log('  Ctrl+R/F5  - Recarregar página');
+			console.log('  Alt+←      - Voltar');
+			console.log('  Alt+→      - Avançar');
+			console.log('%cNavegação Simples e Privada! 🔒', 'font-size: 14px; font-weight: bold; margin-top: 10px; color: #28a745;');
+		})();
+	`
 }
 
 // Errors
