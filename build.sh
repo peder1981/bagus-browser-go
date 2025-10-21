@@ -59,6 +59,17 @@ else
 fi
 echo ""
 
+# Gerar ícones se necessário
+echo -e "${YELLOW}🎨 Verificando ícones...${NC}"
+if [ ! -f "assets/icons/bagus-browser-48.png" ]; then
+    echo -e "${YELLOW}   Gerando ícones...${NC}"
+    cd assets/icons
+    ./generate-icons.sh
+    cd ../..
+fi
+echo -e "${GREEN}✅ Ícones OK${NC}"
+echo ""
+
 # Criar .desktop file
 echo -e "${YELLOW}📝 Criando arquivo .desktop...${NC}"
 cat > ${BUILD_DIR}/${APP_NAME}.desktop <<EOF
@@ -66,13 +77,25 @@ cat > ${BUILD_DIR}/${APP_NAME}.desktop <<EOF
 Version=1.0
 Type=Application
 Name=Bagus Browser
+GenericName=Web Browser
 Comment=Browser minimalista, seguro e privado
-Exec=${APP_NAME}
+Exec=${APP_NAME} %u
 Icon=${APP_NAME}
 Terminal=false
 Categories=Network;WebBrowser;
-Keywords=browser;web;internet;
+Keywords=browser;web;internet;navegador;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
 StartupNotify=true
+StartupWMClass=bagus-browser
+Actions=NewWindow;NewPrivateWindow;
+
+[Desktop Action NewWindow]
+Name=Nova Janela
+Exec=${APP_NAME}
+
+[Desktop Action NewPrivateWindow]
+Name=Nova Janela Privada
+Exec=${APP_NAME} --private
 EOF
 
 echo -e "${GREEN}✅ Arquivo .desktop criado${NC}"
@@ -85,6 +108,8 @@ mkdir -p ${DEB_DIR}/DEBIAN
 mkdir -p ${DEB_DIR}/usr/bin
 mkdir -p ${DEB_DIR}/usr/share/applications
 mkdir -p ${DEB_DIR}/usr/share/doc/${APP_NAME}
+mkdir -p ${DEB_DIR}/usr/share/icons/hicolor/{16x16,22x22,24x24,32x32,48x48,64x64,128x128,256x256,512x512}/apps
+mkdir -p ${DEB_DIR}/usr/share/pixmaps
 
 # Copiar binário
 cp ${BUILD_DIR}/${APP_NAME} ${DEB_DIR}/usr/bin/
@@ -93,10 +118,73 @@ chmod +x ${DEB_DIR}/usr/bin/${APP_NAME}
 # Copiar .desktop
 cp ${BUILD_DIR}/${APP_NAME}.desktop ${DEB_DIR}/usr/share/applications/
 
+# Copiar ícones
+echo -e "${YELLOW}🎨 Copiando ícones...${NC}"
+for size in 16 22 24 32 48 64 128 256 512; do
+    if [ -f "assets/icons/${APP_NAME}-${size}.png" ]; then
+        cp "assets/icons/${APP_NAME}-${size}.png" \
+           "${DEB_DIR}/usr/share/icons/hicolor/${size}x${size}/apps/${APP_NAME}.png"
+    fi
+done
+# Copiar para pixmaps (fallback)
+cp "assets/icons/${APP_NAME}-48.png" "${DEB_DIR}/usr/share/pixmaps/${APP_NAME}.png" 2>/dev/null || true
+echo -e "${GREEN}✅ Ícones copiados${NC}"
+
 # Copiar documentação
 cp README.md ${DEB_DIR}/usr/share/doc/${APP_NAME}/
 cp LICENSE ${DEB_DIR}/usr/share/doc/${APP_NAME}/
 cp CHANGELOG.md ${DEB_DIR}/usr/share/doc/${APP_NAME}/ 2>/dev/null || true
+
+# Criar script postinst (pós-instalação)
+cat > ${DEB_DIR}/DEBIAN/postinst <<'POSTINST'
+#!/bin/bash
+set -e
+
+# Atualizar cache de ícones
+if command -v gtk-update-icon-cache &> /dev/null; then
+    gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+fi
+
+# Atualizar banco de dados de aplicações
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+
+# Atualizar cache MIME
+if command -v update-mime-database &> /dev/null; then
+    update-mime-database /usr/share/mime 2>/dev/null || true
+fi
+
+echo "✅ Bagus Browser instalado com sucesso!"
+echo "   Execute: bagus-browser"
+echo "   Ou procure no menu de aplicações"
+
+exit 0
+POSTINST
+
+chmod +x ${DEB_DIR}/DEBIAN/postinst
+
+# Criar script postrm (pós-remoção)
+cat > ${DEB_DIR}/DEBIAN/postrm <<'POSTRM'
+#!/bin/bash
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    # Atualizar cache de ícones
+    if command -v gtk-update-icon-cache &> /dev/null; then
+        gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+    fi
+    
+    # Atualizar banco de dados de aplicações
+    if command -v update-desktop-database &> /dev/null; then
+        update-desktop-database /usr/share/applications 2>/dev/null || true
+    fi
+fi
+
+exit 0
+POSTRM
+
+chmod +x ${DEB_DIR}/DEBIAN/postrm
 
 # Criar arquivo control
 cat > ${DEB_DIR}/DEBIAN/control <<EOF
