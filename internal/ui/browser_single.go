@@ -69,8 +69,8 @@ func (b *BrowserSingleWindow) Run() error {
 	// Bind funções
 	b.bindFunctions()
 
-	// Injeta controles via JavaScript
-	b.injectControls()
+	// Injeta controles que serão executados em TODAS as páginas
+	w.Init(b.getControlsScript())
 
 	// Navega diretamente para URL inicial
 	initialURL := b.config.Default.URL
@@ -105,9 +105,9 @@ func (b *BrowserSingleWindow) bindFunctions() {
 	})
 }
 
-// injectControls injeta controles de navegação via JavaScript
-func (b *BrowserSingleWindow) injectControls() {
-	js := `
+// getControlsScript retorna o script de controles para ser injetado em todas as páginas
+func (b *BrowserSingleWindow) getControlsScript() string {
+	return `
 		(function() {
 			// Previne múltiplas injeções
 			if (window.bagusControlsInjected) return;
@@ -165,7 +165,6 @@ func (b *BrowserSingleWindow) injectControls() {
 			console.log('  navigateGo("https://exemplo.com")');
 		})();
 	`
-	b.w.Eval(js)
 }
 
 // navigate processa e navega para URL
