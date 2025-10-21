@@ -12,7 +12,6 @@ linters:
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
     - gofmt
     - goimports
@@ -20,9 +19,7 @@ linters:
     - revive
     
   disable:
-    - deadcode
-    - structcheck
-    - varcheck
+    - typecheck  # Desabilitado: requer GTK/WebKit no CI
 
 linters-settings:
   errcheck:
@@ -36,24 +33,6 @@ linters-settings:
     confidence: 0.8
 
 issues:
-  # Ignora erros de import de webview (CGO)
-  exclude:
-    - "could not import github.com/webview/webview_go"
-    - "Package gtk\\+-3\\.0 was not found"
-    - "Package 'webkit2gtk-4\\.0'"
-    
-  # Não reporta typecheck em pacotes CGO
-  exclude-rules:
-    - path: main.go
-      linters:
-        - typecheck
-    - path: cmd/bagus/main.go
-      linters:
-        - typecheck
-    - path: internal/ui/
-      linters:
-        - typecheck
-    
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude-use-default: false
