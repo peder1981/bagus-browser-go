@@ -4,7 +4,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org)
-[![Platform](https://img.shields.io/badge/Platform-Linux-green.svg)](https://www.linux.org)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20Only-green.svg)](https://www.linux.org)
+
+> ⚠️ **Nota:** Este browser é compatível apenas com **Linux**. Requer GTK3 e WebKit2GTK-4.0.
 
 **Status:** ✅ Produção  
 **Tamanho:** 5.5MB  
@@ -85,6 +87,18 @@
 
 ## 🚀 Instalação
 
+### ⚠️ Compatibilidade
+
+**Plataformas Suportadas:**
+- ✅ **Linux** (Ubuntu, Debian, Fedora, Arch, etc.)
+- ❌ **Windows** (não suportado - requer WebKit2GTK)
+- ❌ **macOS** (não testado - pode funcionar com brew)
+
+**Requisitos:**
+- GTK3
+- WebKit2GTK-4.0
+- Go 1.23+
+
 ### Dependências (Ubuntu/Debian)
 ```bash
 sudo apt-get install -y \
@@ -92,6 +106,20 @@ sudo apt-get install -y \
     libwebkit2gtk-4.0-dev \
     pkg-config \
     build-essential
+```
+
+### Dependências (Fedora/RHEL)
+```bash
+sudo dnf install -y \
+    gtk3-devel \
+    webkit2gtk4.0-devel \
+    pkg-config \
+    gcc
+```
+
+### Dependências (Arch Linux)
+```bash
+sudo pacman -S gtk3 webkit2gtk pkg-config base-devel
 ```
 
 ### Compilar
