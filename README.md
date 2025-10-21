@@ -113,6 +113,42 @@ bagus          # Se instalou manualmente
 - Dados armazenados localmente
 - Código 100% open source
 
+## 📚 Documentação
+
+### Guias de Instalação
+- [Instalação Completa](docs/install/INSTALL.md) - Guia detalhado de instalação
+- [Instalação CEF](docs/install/INSTALL_CEF.md) - Versão com 100% compatibilidade
+- [Instalação de Ícone](docs/install/INSTALACAO_ICONE.md) - Integração com desktop
+
+### Primeiros Passos
+- [Quick Start](docs/getting-started/QUICK_START.md) - Comece rapidamente
+- [Quick Start CEF](docs/getting-started/QUICKSTART_CEF.md) - Versão completa
+- [Quick Start GitHub](docs/getting-started/QUICK_START_GITHUB.md) - Para desenvolvedores
+
+### Desenvolvimento
+- [Build Guide](docs/build/BUILD.md) - Como compilar o projeto
+- [Build Tags](docs/build/BUILD_TAGS.md) - Tags de compilação
+- [Testing](TESTING.md) - Guia de testes
+- [Linting](LINTING.md) - Qualidade de código
+- [Contributing](CONTRIBUTING.md) - Como contribuir
+
+### Uso
+- [Como Usar](docs/usage/COMO_USAR.md) - Guia de uso
+- [Exemplos](docs/usage/EXEMPLOS.md) - Exemplos práticos
+- [Comandos Rápidos](docs/usage/COMANDOS_RAPIDOS.md) - Referência rápida
+
+### Release
+- [Release Guide](docs/release/RELEASE_GUIDE.md) - Como criar releases
+- [Release Instructions](docs/release/RELEASE_INSTRUCTIONS.md) - Instruções detalhadas
+
+### Segurança
+- [Security Policy](SECURITY.md) - Política de segurança
+- [Privacy](docs/security/PRIVACY.md) - Privacidade e dados
+
+### CEF (Chromium Embedded Framework)
+- [CEF README](docs/cef/README_CEF.md) - Documentação CEF
+- [CEF Status](docs/cef/CEF_STATUS.md) - Status da implementação
+
 ## 📊 Status do Projeto
 
 **Versão Atual:** 2.0.0  
