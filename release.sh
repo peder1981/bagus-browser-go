@@ -12,19 +12,26 @@ echo -e "${BLUE}🚀 Bagus Browser - GitHub Release Script${NC}"
 echo -e "${BLUE}=========================================${NC}"
 echo ""
 
-# Verificar se gh CLI está instalado
-if ! command -v gh &> /dev/null; then
-    echo -e "${RED}❌ GitHub CLI (gh) não encontrado${NC}"
-    echo -e "${YELLOW}Instale com: sudo apt install gh${NC}"
-    echo -e "${YELLOW}Ou: https://cli.github.com/${NC}"
-    exit 1
-fi
-
-# Verificar autenticação
-if ! gh auth status &> /dev/null; then
-    echo -e "${RED}❌ Não autenticado no GitHub${NC}"
-    echo -e "${YELLOW}Execute: gh auth login${NC}"
-    exit 1
+# Verificar token do GitHub
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo -e "${YELLOW}⚠️  GITHUB_TOKEN não definido${NC}"
+    echo -e "${YELLOW}Opções:${NC}"
+    echo -e "  1. Exportar: export GITHUB_TOKEN=seu_token_aqui"
+    echo -e "  2. Criar em: https://github.com/settings/tokens"
+    echo -e "  3. Ou usar gh CLI: gh auth login"
+    echo ""
+    
+    # Tentar usar gh CLI como fallback
+    if command -v gh &> /dev/null && gh auth status &> /dev/null; then
+        echo -e "${GREEN}✅ Usando gh CLI autenticado${NC}"
+        USE_GH_CLI=true
+    else
+        echo -e "${RED}❌ Nenhuma autenticação disponível${NC}"
+        exit 1
+    fi
+else
+    echo -e "${GREEN}✅ GITHUB_TOKEN encontrado${NC}"
+    USE_GH_CLI=false
 fi
 
 # Obter versão
@@ -136,14 +143,66 @@ EOF
 echo -e "${YELLOW}🚀 Criando release no GitHub...${NC}"
 echo ""
 
-gh release create ${VERSION} \
-    --title "Bagus Browser ${VERSION}" \
-    --notes "${RELEASE_NOTES}" \
-    dist/*.deb \
-    dist/*.tar.gz \
-    dist/SHA256SUMS
+if [ "$USE_GH_CLI" = true ]; then
+    # Usar gh CLI
+    gh release create ${VERSION} \
+        --title "Bagus Browser ${VERSION}" \
+        --notes "${RELEASE_NOTES}" \
+        dist/*.deb \
+        dist/*.tar.gz \
+        dist/SHA256SUMS
+    
+    RESULT=$?
+else
+    # Usar API REST com token
+    REPO="peder1981/bagus-browser-go"
+    API_URL="https://api.github.com/repos/${REPO}/releases"
+    
+    # Criar release
+    RESPONSE=$(curl -s -X POST \
+        -H "Authorization: token ${GITHUB_TOKEN}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        "${API_URL}" \
+        -d "{
+            \"tag_name\": \"${VERSION}\",
+            \"name\": \"Bagus Browser ${VERSION}\",
+            \"body\": $(echo "${RELEASE_NOTES}" | jq -Rs .),
+            \"draft\": false,
+            \"prerelease\": false
+        }")
+    
+    RELEASE_ID=$(echo "${RESPONSE}" | jq -r '.id')
+    
+    if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
+        echo -e "${RED}❌ Erro ao criar release${NC}"
+        echo "${RESPONSE}" | jq .
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ Release criada (ID: ${RELEASE_ID})${NC}"
+    
+    # Upload de arquivos
+    UPLOAD_URL="https://uploads.github.com/repos/${REPO}/releases/${RELEASE_ID}/assets"
+    
+    for file in dist/*.deb dist/*.tar.gz dist/SHA256SUMS; do
+        if [ -f "$file" ]; then
+            filename=$(basename "$file")
+            echo -e "${YELLOW}📤 Uploading ${filename}...${NC}"
+            
+            curl -s -X POST \
+                -H "Authorization: token ${GITHUB_TOKEN}" \
+                -H "Content-Type: application/octet-stream" \
+                "${UPLOAD_URL}?name=${filename}" \
+                --data-binary "@${file}" > /dev/null
+            
+            echo -e "${GREEN}   ✅ ${filename} uploaded${NC}"
+        fi
+    done
+    
+    RESULT=0
+fi
 
-if [ $? -eq 0 ]; then
+if [ $RESULT -eq 0 ]; then
     echo ""
     echo -e "${GREEN}✅ Release criada com sucesso!${NC}"
     echo ""
