@@ -2,9 +2,12 @@ package browser
 
 import (
 	"log"
+	"net/url"
+	"strings"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/peder1981/bagus-browser-go/internal/security"
 	"github.com/peder1981/bagus-browser-go/pkg/ipc"
 )
 
@@ -211,30 +214,27 @@ func (cw *ControlWindow) navigate(input string) {
 
 // processURL processa o input do usuário
 func processURL(input string) string {
+	input = strings.TrimSpace(input)
+	
+	if input == "" {
+		return ""
+	}
+
 	// Se contém espaço, é uma busca
-	if containsSpace(input) {
-		return "https://duckduckgo.com/?q=" + input
+	if strings.Contains(input, " ") {
+		return "https://duckduckgo.com/?q=" + url.QueryEscape(input)
 	}
 
-	// Se não tem protocolo, adicionar https://
-	if !hasProtocol(input) {
-		return "https://" + input
+	// Sanitizar URL (adiciona https:// se necessário)
+	sanitized := security.SanitizeURL(input)
+
+	// Validar URL
+	if err := security.ValidateURL(sanitized); err != nil {
+		log.Printf("URL inválida: %v, fazendo busca", err)
+		return "https://duckduckgo.com/?q=" + url.QueryEscape(input)
 	}
 
-	return input
-}
-
-func containsSpace(s string) bool {
-	for _, c := range s {
-		if c == ' ' {
-			return true
-		}
-	}
-	return false
-}
-
-func hasProtocol(s string) bool {
-	return len(s) > 7 && (s[:7] == "http://" || s[:8] == "https://")
+	return sanitized
 }
 
 // UpdateURL atualiza o campo de URL

@@ -1,6 +1,6 @@
-# 🌐 Bagus Browser
+# 🌐 Bagus Browser v3.0.0
 
-**Navegador web leve, rápido e focado em privacidade, escrito em Go.**
+**Browser leve, seguro e focado em privacidade com arquitetura de 2 janelas**, escrito em Go.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](https://golang.org)
