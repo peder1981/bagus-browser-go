@@ -71,6 +71,35 @@ static const char* get_uri(WebKitWebView* webview) {
 static const char* get_title(WebKitWebView* webview) {
     return webkit_web_view_get_title(webview);
 }
+
+// Funções de busca
+static WebKitFindController* get_find_controller(WebKitWebView* webview) {
+    return webkit_web_view_get_find_controller(webview);
+}
+
+static void find_text(WebKitWebView* webview, const char* text, gboolean case_sensitive) {
+    WebKitFindController* controller = webkit_web_view_get_find_controller(webview);
+    guint32 options = WEBKIT_FIND_OPTIONS_WRAP_AROUND;
+    if (!case_sensitive) {
+        options |= WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE;
+    }
+    webkit_find_controller_search(controller, text, options, G_MAXUINT);
+}
+
+static void find_next(WebKitWebView* webview) {
+    WebKitFindController* controller = webkit_web_view_get_find_controller(webview);
+    webkit_find_controller_search_next(controller);
+}
+
+static void find_previous(WebKitWebView* webview) {
+    WebKitFindController* controller = webkit_web_view_get_find_controller(webview);
+    webkit_find_controller_search_previous(controller);
+}
+
+static void find_finish(WebKitWebView* webview) {
+    WebKitFindController* controller = webkit_web_view_get_find_controller(webview);
+    webkit_find_controller_search_finish(controller);
+}
 */
 import "C"
 import (
@@ -188,6 +217,36 @@ func (w *WebView) ZoomReset() {
 	w.SetZoomLevel(1.0)
 }
 
+// FindText busca texto na página
+func (w *WebView) FindText(text string, caseSensitive bool) {
+	cText := C.CString(text)
+	defer C.free(unsafe.Pointer(cText))
+	
+	var cCaseSensitive C.gboolean
+	if caseSensitive {
+		cCaseSensitive = C.gboolean(1)
+	} else {
+		cCaseSensitive = C.gboolean(0)
+	}
+	
+	C.find_text(w.cWebView, cText, cCaseSensitive)
+}
+
+// FindNext busca próxima ocorrência
+func (w *WebView) FindNext() {
+	C.find_next(w.cWebView)
+}
+
+// FindPrevious busca ocorrência anterior
+func (w *WebView) FindPrevious() {
+	C.find_previous(w.cWebView)
+}
+
+// FindFinish finaliza busca
+func (w *WebView) FindFinish() {
+	C.find_finish(w.cWebView)
+}
+
 // Tab representa uma aba com WebView e label
 type Tab struct {
 	webView *WebView
@@ -202,6 +261,9 @@ type Browser struct {
 	tabs           []*Tab
 	validator      *URLValidator
 	privacyManager *PrivacyManager
+	findBar        *gtk.Box
+	findEntry      *gtk.Entry
+	findBarVisible bool
 }
 
 func main() {
@@ -219,6 +281,7 @@ func main() {
 	log.Println("   Ctrl+T (nova aba), Ctrl+W (fechar)")
 	log.Println("   Alt+← (voltar), Alt+→ (avançar), F5 (recarregar)")
 	log.Println("   Ctrl++ (zoom in), Ctrl+- (zoom out), Ctrl+0 (reset zoom)")
+	log.Println("   Ctrl+F (buscar), F3 (próximo), Shift+F3 (anterior)")
 	log.Println("   Ctrl+L (focar URL)")
 
 	gtk.Main()
@@ -405,6 +468,35 @@ func (b *Browser) setupKeyboardShortcuts() {
 		if ctrlPressed && keyVal == gdk.KEY_0 {
 			log.Println("⌨️  Ctrl+0 - Resetar zoom")
 			b.ZoomReset()
+			return true
+		}
+
+		// Ctrl+F - Buscar na página
+		if ctrlPressed && keyVal == gdk.KEY_f {
+			log.Println("⌨️  Ctrl+F - Buscar na página")
+			b.ShowFindBar()
+			return true
+		}
+
+		// Esc - Fechar barra de busca
+		if keyVal == gdk.KEY_Escape && b.findBarVisible {
+			log.Println("⌨️  Esc - Fechar busca")
+			b.HideFindBar()
+			return true
+		}
+
+		// F3 - Próximo resultado
+		if keyVal == gdk.KEY_F3 {
+			log.Println("⌨️  F3 - Próximo resultado")
+			b.FindNext()
+			return true
+		}
+
+		// Shift+F3 - Resultado anterior
+		shiftPressed := (state & uint(gdk.SHIFT_MASK)) != 0
+		if shiftPressed && keyVal == gdk.KEY_F3 {
+			log.Println("⌨️  Shift+F3 - Resultado anterior")
+			b.FindPrevious()
 			return true
 		}
 
@@ -600,6 +692,91 @@ func (b *Browser) ZoomReset() {
 	if webView != nil {
 		webView.ZoomReset()
 		log.Println("🔍 Zoom: 100%")
+	}
+}
+
+// ShowFindBar mostra a barra de busca
+func (b *Browser) ShowFindBar() {
+	// Por enquanto, usar um dialog simples
+	dialog, _ := gtk.DialogNew()
+	dialog.SetTitle("Buscar na Página")
+	dialog.SetTransientFor(b.window)
+	dialog.SetModal(true)
+	dialog.SetDefaultSize(400, 100)
+	
+	// Entry para busca
+	entry, _ := gtk.EntryNew()
+	entry.SetPlaceholderText("Digite o texto para buscar...")
+	
+	// Botões
+	dialog.AddButton("Próximo", gtk.RESPONSE_ACCEPT)
+	dialog.AddButton("Anterior", gtk.RESPONSE_REJECT)
+	dialog.AddButton("Fechar", gtk.RESPONSE_CLOSE)
+	
+	// Adicionar entry ao dialog
+	box, _ := dialog.GetContentArea()
+	box.SetMarginTop(10)
+	box.SetMarginBottom(10)
+	box.SetMarginStart(10)
+	box.SetMarginEnd(10)
+	box.PackStart(entry, true, true, 5)
+	
+	dialog.ShowAll()
+	
+	// Handler para buscar ao digitar
+	entry.Connect("changed", func() {
+		text, _ := entry.GetText()
+		if text != "" {
+			webView := b.getCurrentWebView()
+			if webView != nil {
+				webView.FindText(text, false)
+			}
+		}
+	})
+	
+	// Handler para resposta
+	dialog.Connect("response", func(d *gtk.Dialog, response gtk.ResponseType) {
+		webView := b.getCurrentWebView()
+		
+		if webView != nil {
+			switch response {
+			case gtk.RESPONSE_ACCEPT: // Próximo
+				webView.FindNext()
+			case gtk.RESPONSE_REJECT: // Anterior
+				webView.FindPrevious()
+			case gtk.RESPONSE_CLOSE: // Fechar
+				webView.FindFinish()
+				dialog.Close()
+			}
+		}
+	})
+	
+	dialog.Run()
+	dialog.Destroy()
+}
+
+// HideFindBar esconde a barra de busca
+func (b *Browser) HideFindBar() {
+	webView := b.getCurrentWebView()
+	if webView != nil {
+		webView.FindFinish()
+	}
+	b.findBarVisible = false
+}
+
+// FindNext busca próxima ocorrência
+func (b *Browser) FindNext() {
+	webView := b.getCurrentWebView()
+	if webView != nil {
+		webView.FindNext()
+	}
+}
+
+// FindPrevious busca ocorrência anterior
+func (b *Browser) FindPrevious() {
+	webView := b.getCurrentWebView()
+	if webView != nil {
+		webView.FindPrevious()
 	}
 }
 
