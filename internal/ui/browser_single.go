@@ -70,7 +70,7 @@ func (b *BrowserSingleWindow) Run() error {
 	// Bind funções
 	b.bindFunctions()
 
-	// Carrega interface HTML
+	// Carrega interface HTML com iframe
 	html := b.generateHTML()
 	w.SetHtml(html)
 
@@ -80,9 +80,9 @@ func (b *BrowserSingleWindow) Run() error {
 
 // bindFunctions registra funções Go para JavaScript
 func (b *BrowserSingleWindow) bindFunctions() {
-	// Navegar
-	b.w.Bind("navigateGo", func(url string) {
-		b.navigate(url)
+	// Navegar (retorna URL processada)
+	b.w.Bind("navigateGo", func(url string) string {
+		return b.navigate(url)
 	})
 
 	// Buscar histórico
@@ -98,19 +98,19 @@ func (b *BrowserSingleWindow) bindFunctions() {
 	})
 }
 
-// navigate processa e navega para URL
-func (b *BrowserSingleWindow) navigate(input string) {
+// navigate processa e navega para URL (retorna URL processada)
+func (b *BrowserSingleWindow) navigate(input string) string {
 	// Processa input
 	finalURL := b.processInput(input)
 	if finalURL == "" {
-		return
+		return ""
 	}
 
 	// Valida URL
 	finalURL = security.SanitizeURL(finalURL)
 	if err := security.ValidateURL(finalURL); err != nil {
 		log.Printf("URL inválida: %v", err)
-		return
+		return ""
 	}
 
 	// Verifica bloqueio
@@ -118,18 +118,16 @@ func (b *BrowserSingleWindow) navigate(input string) {
 		domain, err := security.ExtractDomain(finalURL)
 		if err == nil && b.blocker.IsBlocked(domain) {
 			log.Printf("Domínio bloqueado: %s", domain)
-			return
+			return ""
 		}
 	}
 
 	// Adiciona ao histórico
 	b.history.Add(finalURL, finalURL)
 
-	// Navega diretamente
+	// Retorna URL para navegação via iframe
 	log.Printf("Navegando para: %s", finalURL)
-	if b.w != nil {
-		b.w.Navigate(finalURL)
-	}
+	return finalURL
 }
 
 // processInput processa input da barra de navegação
@@ -161,91 +159,104 @@ func (b *BrowserSingleWindow) processInput(input string) string {
 	return searchURL
 }
 
-// generateHTML gera HTML com barra de navegação injetada
+// generateHTML gera HTML com barra de navegação e iframe
 func (b *BrowserSingleWindow) generateHTML() string {
+	defaultURL := b.config.Default.URL
+	if defaultURL == "" {
+		defaultURL = "https://duckduckgo.com"
+	}
+	
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Bagus Browser</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+        #nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: #2d2d2d;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        #content-frame {
+            position: fixed;
+            top: 50px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: none;
+            width: 100%%;
+            height: calc(100%% - 50px);
+        }
+        .nav-btn {
+            padding: 8px 16px;
+            background: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            min-width: 40px;
+        }
+        .nav-btn:hover { background: #106ebe; }
+        #url-input {
+            flex: 1;
+            padding: 10px 15px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 15px;
+        }
+        #url-input:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+    </style>
     <script>
-        // Injeta barra de navegação assim que a página carregar
-        window.addEventListener('DOMContentLoaded', function() {
-            injectNavBar();
-            // Navega para URL inicial
-            setTimeout(function() {
-                window.location.href = '%s';
-            }, 100);
-        });
-
-        // Reinjeta barra após navegação
-        window.addEventListener('load', function() {
-            setTimeout(injectNavBar, 500);
-        });
-
-        function injectNavBar() {
-            // Remove barra existente
-            var existing = document.getElementById('bagus-nav-bar');
-            if (existing) existing.remove();
-
-            // Cria barra
-            var nav = document.createElement('div');
-            nav.id = 'bagus-nav-bar';
-            nav.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; z-index: 999999; background: #2d2d2d; padding: 10px; display: flex; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);';
-
-            // Botão Voltar
-            var btnBack = createButton('◀', 'Voltar', function() { history.back(); });
-            nav.appendChild(btnBack);
-
-            // Botão Avançar
-            var btnForward = createButton('▶', 'Avançar', function() { history.forward(); });
-            nav.appendChild(btnForward);
-
-            // Botão Recarregar
-            var btnReload = createButton('⟳', 'Recarregar', function() { location.reload(); });
-            nav.appendChild(btnReload);
-
-            // Campo URL
-            var urlInput = document.createElement('input');
-            urlInput.type = 'text';
-            urlInput.id = 'bagus-url-input';
-            urlInput.value = window.location.href;
-            urlInput.placeholder = 'Digite uma URL ou termo de busca...';
-            urlInput.style.cssText = 'flex: 1; padding: 10px 15px; background: #3c3c3c; border: 1px solid #555; border-radius: 4px; color: #fff; font-size: 15px;';
-            urlInput.onkeydown = function(e) {
-                if (e.key === 'Enter') {
-                    var input = this.value.trim();
-                    if (input && window.processInputGo && window.navigateGo) {
-                        navigateGo(input);
-                    }
-                }
-            };
-            nav.appendChild(urlInput);
-
-            // Insere no body
-            if (document.body) {
-                document.body.insertBefore(nav, document.body.firstChild);
-                // Ajusta padding
-                document.body.style.paddingTop = (nav.offsetHeight) + 'px';
+        function navigate(url) {
+            var frame = document.getElementById('content-frame');
+            var urlInput = document.getElementById('url-input');
+            if (frame && url) {
+                frame.src = url;
+                if (urlInput) urlInput.value = url;
             }
         }
 
-        function createButton(text, title, onclick) {
-            var btn = document.createElement('button');
-            btn.textContent = text;
-            btn.title = title;
-            btn.style.cssText = 'padding: 10px 20px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;';
-            btn.onmouseover = function() { this.style.background = '#106ebe'; };
-            btn.onmouseout = function() { this.style.background = '#0078d4'; };
-            btn.onclick = onclick;
-            return btn;
+        function handleUrlInput(event) {
+            if (event.key === 'Enter') {
+                var input = event.target.value.trim();
+                if (input && window.navigateGo) {
+                    var url = navigateGo(input);
+                    if (url) navigate(url);
+                }
+            }
         }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            // Navega para URL inicial
+            navigate('%s');
+        });
     </script>
 </head>
 <body>
-    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: Arial;">
-        <p>Carregando Bagus Browser...</p>
+    <div id="nav-bar">
+        <button class="nav-btn" onclick="document.getElementById('content-frame').contentWindow.history.back()" title="Voltar">◀</button>
+        <button class="nav-btn" onclick="document.getElementById('content-frame').contentWindow.history.forward()" title="Avançar">▶</button>
+        <button class="nav-btn" onclick="document.getElementById('content-frame').contentWindow.location.reload()" title="Recarregar">⟳</button>
+        <input type="text" id="url-input" placeholder="Digite uma URL ou termo de busca..." onkeydown="handleUrlInput(event)" value="%s">
     </div>
+    <iframe id="content-frame" src="%s"></iframe>
 </body>
-</html>`, b.config.Default.URL)
+</html>`, defaultURL, defaultURL, defaultURL)
 }
