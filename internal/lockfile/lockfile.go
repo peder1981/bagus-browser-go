@@ -35,7 +35,7 @@ func (l *LockFile) TryLock() error {
 	err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
 		file.Close()
-		
+
 		// Lê PID da instância em execução
 		existingPID := l.readPID()
 		if existingPID > 0 {
@@ -63,7 +63,7 @@ func (l *LockFile) Unlock() error {
 
 	// Libera o lock
 	syscall.Flock(int(l.file.Fd()), syscall.LOCK_UN)
-	
+
 	// Fecha o arquivo
 	err := l.file.Close()
 	l.file = nil

@@ -71,7 +71,7 @@ func (b *BrowserDualWindow) Run() error {
 			b.mu.Lock()
 			b.currentURL = url
 			b.mu.Unlock()
-			
+
 			if b.controlWindow != nil {
 				b.controlWindow.UpdateURL(url)
 			}

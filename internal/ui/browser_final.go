@@ -183,7 +183,7 @@ func (b *BrowserFinal) processInput(input string) string {
 // generateHTML gera HTML da interface completa
 func (b *BrowserFinal) generateHTML() string {
 	defaultURL := b.config.Default.URL
-	
+
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html>
 <head>

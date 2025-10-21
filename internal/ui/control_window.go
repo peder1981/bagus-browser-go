@@ -40,7 +40,7 @@ func (c *ControlWindow) Run(onNavigate func(string), onSearch func(string) []int
 		c.mu.Lock()
 		c.currentURL = url
 		c.mu.Unlock()
-		
+
 		if onNavigate != nil {
 			onNavigate(url)
 		}
