@@ -13,16 +13,16 @@ help:
 	@echo ""
 
 build:
-	@chmod +x build.sh
-	@./build.sh
+	@chmod +x scripts/build.sh
+	@./scripts/build.sh
 
 release:
-	@chmod +x release.sh
-	@./release.sh
+	@chmod +x scripts/release.sh
+	@./scripts/release.sh
 
 publish:
-	@chmod +x publish.sh
-	@./publish.sh
+	@chmod +x scripts/publish.sh
+	@./scripts/publish.sh
 
 clean:
 	@echo "🗑️  Limpando..."
