@@ -97,7 +97,7 @@ source ~/.bashrc
 ### "Erro ao compilar"
 ```bash
 # Instale dependências manualmente
-sudo apt-get install golang git build-essential libwebkit2gtk-4.0-dev
+sudo apt-get install golang git build-essential libwebkit2gtk-4.1-dev
 ```
 
 ### "CEF não instala"

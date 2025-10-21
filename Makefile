@@ -159,7 +159,7 @@ test-coverage:
 # Executar TODOS os testes (requer GTK/WebKit instalados)
 test-all:
 	@echo "$(GREEN)Executando TODOS os testes (incluindo UI)...$(NC)"
-	@echo "$(YELLOW)Requer: libwebkit2gtk-4.0-dev libgtk-3-dev$(NC)"
+	@echo "$(YELLOW)Requer: libwebkit2gtk-4.1-dev libgtk-3-dev$(NC)"
 	go test -v ./...
 	@echo "$(GREEN)✓ Todos os testes concluídos$(NC)"
 

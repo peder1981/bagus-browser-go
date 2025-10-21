@@ -63,7 +63,7 @@ bagus
 
 ```bash
 # Instalar dependências
-sudo apt install golang gcc libwebkit2gtk-4.0-dev
+sudo apt install golang gcc libwebkit2gtk-4.1-dev
 
 # Clonar repositório
 git clone https://github.com/peder1981/bagus-browser-go.git

@@ -61,7 +61,7 @@ make test-all
 
 **Requer:**
 ```bash
-sudo apt install libwebkit2gtk-4.0-dev libgtk-3-dev
+sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev
 ```
 
 ## 📝 Estrutura de Testes

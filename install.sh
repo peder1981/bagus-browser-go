@@ -32,7 +32,7 @@ install_fast() {
     case $OS in
         ubuntu|debian|pop|linuxmint)
             sudo apt-get update -qq
-            sudo apt-get install -y -qq golang git build-essential libwebkit2gtk-4.0-dev libgtk-3-dev > /dev/null 2>&1
+            sudo apt-get install -y -qq golang git build-essential libwebkit2gtk-4.1-dev libgtk-3-dev > /dev/null 2>&1
             ;;
         fedora)
             sudo dnf install -y -q golang git gcc-c++ webkit2gtk3-devel gtk3-devel > /dev/null 2>&1

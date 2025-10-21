@@ -292,7 +292,7 @@ sudo apt-get install build-essential cmake libgtk-3-dev
 ### Webview não compila
 ```bash
 # Ubuntu/Debian
-sudo apt-get install libwebkit2gtk-4.0-dev
+sudo apt-get install libwebkit2gtk-4.1-dev
 
 # Fedora
 sudo dnf install webkit2gtk3-devel

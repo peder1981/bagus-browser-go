@@ -149,7 +149,7 @@ go test -v ./...
 ### Webview não funciona
 **Linux**: Instale webkit2gtk
 ```bash
-sudo apt install libwebkit2gtk-4.0-dev  # Debian/Ubuntu
+sudo apt install libwebkit2gtk-4.1-dev  # Debian/Ubuntu
 sudo dnf install webkit2gtk3-devel      # Fedora
 ```
 

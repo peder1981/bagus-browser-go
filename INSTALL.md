@@ -40,7 +40,7 @@ sudo apt-get install -y \
     golang \
     git \
     build-essential \
-    libwebkit2gtk-4.0-dev \
+    libwebkit2gtk-4.1-dev \
     libgtk-3-dev
 ```
 
@@ -190,10 +190,10 @@ sudo dnf install golang
 sudo pacman -S go
 ```
 
-### "package libwebkit2gtk-4.0-dev is not available"
+### "package libwebkit2gtk-4.1-dev is not available"
 ```bash
 # Ubuntu/Debian
-sudo apt-get install libwebkit2gtk-4.0-dev
+sudo apt-get install libwebkit2gtk-4.1-dev
 
 # Se não encontrar, tente:
 sudo apt-get install libwebkit2gtk-4.1-dev
