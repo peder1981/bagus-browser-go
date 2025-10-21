@@ -255,15 +255,16 @@ type Tab struct {
 
 // Browser representa o navegador
 type Browser struct {
-	window         *gtk.Window
-	notebook       *gtk.Notebook
-	urlEntry       *gtk.Entry
-	tabs           []*Tab
-	validator      *URLValidator
-	privacyManager *PrivacyManager
-	findBar        *gtk.Box
-	findEntry      *gtk.Entry
-	findBarVisible bool
+	window          *gtk.Window
+	notebook        *gtk.Notebook
+	urlEntry        *gtk.Entry
+	tabs            []*Tab
+	validator       *URLValidator
+	privacyManager  *PrivacyManager
+	bookmarkManager *BookmarkManager
+	findBar         *gtk.Box
+	findEntry       *gtk.Entry
+	findBarVisible  bool
 }
 
 func main() {
@@ -312,13 +313,26 @@ func NewBrowser() *Browser {
 		log.Fatal("Erro ao criar entry:", err)
 	}
 
+	// Criar CryptoManager
+	crypto, err := NewCryptoManager("")
+	if err != nil {
+		log.Fatal("Erro ao criar crypto:", err)
+	}
+	
+	// Criar BookmarkManager
+	bookmarkManager, err := NewBookmarkManager(crypto)
+	if err != nil {
+		log.Printf("⚠️  Erro ao criar bookmark manager: %v", err)
+	}
+	
 	browser := &Browser{
-		window:         win,
-		notebook:       notebook,
-		urlEntry:       urlEntry,
-		tabs:           make([]*Tab, 0),
-		validator:      NewURLValidator(),
-		privacyManager: NewPrivacyManager(),
+		window:          win,
+		notebook:        notebook,
+		urlEntry:        urlEntry,
+		tabs:            make([]*Tab, 0),
+		validator:       NewURLValidator(),
+		privacyManager:  NewPrivacyManager(),
+		bookmarkManager: bookmarkManager,
 	}
 	
 	// Logar informações de privacidade
@@ -497,6 +511,20 @@ func (b *Browser) setupKeyboardShortcuts() {
 		if shiftPressed && keyVal == gdk.KEY_F3 {
 			log.Println("⌨️  Shift+F3 - Resultado anterior")
 			b.FindPrevious()
+			return true
+		}
+
+		// Ctrl+D - Adicionar favorito
+		if ctrlPressed && keyVal == gdk.KEY_d {
+			log.Println("⌨️  Ctrl+D - Adicionar favorito")
+			b.AddBookmark()
+			return true
+		}
+
+		// Ctrl+Shift+B - Gerenciar favoritos
+		if ctrlPressed && shiftPressed && keyVal == gdk.KEY_b {
+			log.Println("⌨️  Ctrl+Shift+B - Gerenciar favoritos")
+			b.ShowBookmarks()
 			return true
 		}
 
@@ -778,6 +806,115 @@ func (b *Browser) FindPrevious() {
 	if webView != nil {
 		webView.FindPrevious()
 	}
+}
+
+// AddBookmark adiciona página atual aos favoritos
+func (b *Browser) AddBookmark() {
+	if b.bookmarkManager == nil {
+		log.Println("⚠️  Bookmark manager não disponível")
+		return
+	}
+	
+	webView := b.getCurrentWebView()
+	if webView == nil {
+		return
+	}
+	
+	url := webView.GetURI()
+	title := webView.GetTitle()
+	
+	if title == "" {
+		title = url
+	}
+	
+	// Verificar se já existe
+	if b.bookmarkManager.Exists(url) {
+		log.Println("⚠️  Favorito já existe")
+		
+		// Mostrar mensagem
+		dialog := gtk.MessageDialogNew(b.window, gtk.DIALOG_MODAL,
+			gtk.MESSAGE_INFO, gtk.BUTTONS_OK, "Este site já está nos favoritos!")
+		dialog.Run()
+		dialog.Destroy()
+		return
+	}
+	
+	// Adicionar
+	if err := b.bookmarkManager.Add(title, url); err != nil {
+		log.Printf("❌ Erro ao adicionar favorito: %v", err)
+		return
+	}
+	
+	// Mostrar confirmação
+	dialog := gtk.MessageDialogNew(b.window, gtk.DIALOG_MODAL,
+		gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
+		fmt.Sprintf("⭐ Favorito adicionado!\n\n%s", title))
+	dialog.Run()
+	dialog.Destroy()
+}
+
+// ShowBookmarks mostra gerenciador de favoritos
+func (b *Browser) ShowBookmarks() {
+	if b.bookmarkManager == nil {
+		log.Println("⚠️  Bookmark manager não disponível")
+		return
+	}
+	
+	dialog, _ := gtk.DialogNew()
+	dialog.SetTitle("Favoritos")
+	dialog.SetTransientFor(b.window)
+	dialog.SetModal(true)
+	dialog.SetDefaultSize(600, 400)
+	
+	// Criar lista
+	scrolled, _ := gtk.ScrolledWindowNew(nil, nil)
+	listBox, _ := gtk.ListBoxNew()
+	scrolled.Add(listBox)
+	
+	// Adicionar favoritos
+	bookmarks := b.bookmarkManager.GetAll()
+	for _, bookmark := range bookmarks {
+		row, _ := gtk.ListBoxRowNew()
+		box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
+		
+		// Título
+		label, _ := gtk.LabelNew(bookmark.Title)
+		label.SetHAlign(gtk.ALIGN_START)
+		box.PackStart(label, true, true, 5)
+		
+		// Botão abrir
+		btnOpen, _ := gtk.ButtonNewWithLabel("Abrir")
+		url := bookmark.URL
+		btnOpen.Connect("clicked", func() {
+			b.NewTab(url)
+			dialog.Close()
+		})
+		box.PackStart(btnOpen, false, false, 5)
+		
+		// Botão remover
+		btnRemove, _ := gtk.ButtonNewWithLabel("Remover")
+		btnRemove.Connect("clicked", func() {
+			if err := b.bookmarkManager.Remove(url); err != nil {
+				log.Printf("❌ Erro ao remover: %v", err)
+			}
+			row.Destroy()
+		})
+		box.PackStart(btnRemove, false, false, 5)
+		
+		row.Add(box)
+		listBox.Add(row)
+	}
+	
+	// Adicionar ao dialog
+	box, _ := dialog.GetContentArea()
+	box.PackStart(scrolled, true, true, 10)
+	
+	// Botão fechar
+	dialog.AddButton("Fechar", gtk.RESPONSE_CLOSE)
+	
+	dialog.ShowAll()
+	dialog.Run()
+	dialog.Destroy()
 }
 
 // Show mostra a janela
