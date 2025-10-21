@@ -57,8 +57,9 @@ help:
 	@echo "  make run-cef        - Executa versão CEF"
 	@echo ""
 	@echo "$(YELLOW)🧪 Testes:$(NC)"
-	@echo "  make test           - Executa testes"
-	@echo "  make test-coverage  - Executa testes com coverage"
+	@echo "  make test           - Executa testes (pula UI/CGO)"
+	@echo "  make test-coverage  - Executa testes com coverage (pula UI/CGO)"
+	@echo "  make test-all       - Executa TODOS os testes (requer GTK/WebKit)"
 	@echo ""
 	@echo "$(YELLOW)🛠️  Utilitários:$(NC)"
 	@echo "  make lint           - Executa linter"
@@ -137,18 +138,30 @@ build-macos:
 build-all: build-linux build-windows build-macos
 	@echo "$(GREEN)✓ Build completo para todas as plataformas$(NC)"
 
-# Executar testes
+# Executar testes (pula pacotes que requerem CGO)
 test:
 	@echo "$(GREEN)Executando testes...$(NC)"
-	go test -v ./...
+	@echo "$(YELLOW)Nota: Pulando pacotes que requerem GTK/WebKit (main, cmd/bagus, internal/ui)$(NC)"
+	go test -v ./internal/browser/... ./internal/config/... ./internal/lockfile/... ./internal/security/... ./internal/storage/... ./pkg/...
 	@echo "$(GREEN)✓ Testes concluídos$(NC)"
 
-# Executar testes com coverage
+# Executar testes com coverage (pula pacotes que requerem CGO)
 test-coverage:
 	@echo "$(GREEN)Executando testes com coverage...$(NC)"
-	go test -v -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "$(GREEN)✓ Coverage gerado: coverage.html$(NC)"
+	@echo "$(YELLOW)Nota: Pulando pacotes que requerem GTK/WebKit (main, cmd/bagus, internal/ui)$(NC)"
+	go test -v -coverprofile=coverage.out ./internal/browser/... ./internal/config/... ./internal/lockfile/... ./internal/security/... ./internal/storage/... ./pkg/...
+	@if [ -f coverage.out ]; then \
+		go tool cover -html=coverage.out -o coverage.html; \
+		echo "$(GREEN)✓ Coverage gerado: coverage.html$(NC)"; \
+		go tool cover -func=coverage.out | tail -1; \
+	fi
+
+# Executar TODOS os testes (requer GTK/WebKit instalados)
+test-all:
+	@echo "$(GREEN)Executando TODOS os testes (incluindo UI)...$(NC)"
+	@echo "$(YELLOW)Requer: libwebkit2gtk-4.0-dev libgtk-3-dev$(NC)"
+	go test -v ./...
+	@echo "$(GREEN)✓ Todos os testes concluídos$(NC)"
 
 # Lint
 lint:
