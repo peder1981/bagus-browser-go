@@ -12,26 +12,35 @@ echo -e "${BLUE}🚀 Bagus Browser - GitHub Release Script${NC}"
 echo -e "${BLUE}=========================================${NC}"
 echo ""
 
-# Verificar token do GitHub
-if [ -z "$GITHUB_TOKEN" ]; then
-    echo -e "${YELLOW}⚠️  GITHUB_TOKEN não definido${NC}"
-    echo -e "${YELLOW}Opções:${NC}"
-    echo -e "  1. Exportar: export GITHUB_TOKEN=seu_token_aqui"
-    echo -e "  2. Criar em: https://github.com/settings/tokens"
-    echo -e "  3. Ou usar gh CLI: gh auth login"
-    echo ""
+# Obter token usando sistema OAuth2 com cache
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/scripts/github-auth.sh" ]; then
+    GITHUB_TOKEN=$(bash "${SCRIPT_DIR}/scripts/github-auth.sh" get)
     
-    # Tentar usar gh CLI como fallback
-    if command -v gh &> /dev/null && gh auth status &> /dev/null; then
-        echo -e "${GREEN}✅ Usando gh CLI autenticado${NC}"
-        USE_GH_CLI=true
-    else
-        echo -e "${RED}❌ Nenhuma autenticação disponível${NC}"
+    if [ -z "$GITHUB_TOKEN" ]; then
+        echo -e "${RED}❌ Falha ao obter token do GitHub${NC}"
         exit 1
     fi
-else
-    echo -e "${GREEN}✅ GITHUB_TOKEN encontrado${NC}"
+    
+    echo -e "${GREEN}✅ Token obtido com sucesso${NC}"
     USE_GH_CLI=false
+else
+    # Fallback para método antigo
+    if [ -z "$GITHUB_TOKEN" ]; then
+        echo -e "${YELLOW}⚠️  GITHUB_TOKEN não definido${NC}"
+        
+        # Tentar usar gh CLI como fallback
+        if command -v gh &> /dev/null && gh auth status &> /dev/null; then
+            echo -e "${GREEN}✅ Usando gh CLI autenticado${NC}"
+            USE_GH_CLI=true
+        else
+            echo -e "${RED}❌ Nenhuma autenticação disponível${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${GREEN}✅ GITHUB_TOKEN encontrado${NC}"
+        USE_GH_CLI=false
+    fi
 fi
 
 # Obter versão
