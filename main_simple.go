@@ -48,6 +48,14 @@ static void reload_page(WebKitWebView* webview) {
     webkit_web_view_reload(webview);
 }
 
+static void set_zoom_level(WebKitWebView* webview, gdouble zoom) {
+    webkit_web_view_set_zoom_level(webview, zoom);
+}
+
+static gdouble get_zoom_level(WebKitWebView* webview) {
+    return webkit_web_view_get_zoom_level(webview);
+}
+
 static gboolean can_go_back(WebKitWebView* webview) {
     return webkit_web_view_can_go_back(webview);
 }
@@ -151,6 +159,35 @@ func (w *WebView) GetTitle() string {
 	return C.GoString(cTitle)
 }
 
+// SetZoomLevel define o nível de zoom
+func (w *WebView) SetZoomLevel(zoom float64) {
+	C.set_zoom_level(w.cWebView, C.gdouble(zoom))
+}
+
+// GetZoomLevel retorna o nível de zoom atual
+func (w *WebView) GetZoomLevel() float64 {
+	return float64(C.get_zoom_level(w.cWebView))
+}
+
+// ZoomIn aumenta o zoom
+func (w *WebView) ZoomIn() {
+	currentZoom := w.GetZoomLevel()
+	w.SetZoomLevel(currentZoom + 0.1)
+}
+
+// ZoomOut diminui o zoom
+func (w *WebView) ZoomOut() {
+	currentZoom := w.GetZoomLevel()
+	if currentZoom > 0.2 {
+		w.SetZoomLevel(currentZoom - 0.1)
+	}
+}
+
+// ZoomReset reseta o zoom para 100%
+func (w *WebView) ZoomReset() {
+	w.SetZoomLevel(1.0)
+}
+
 // Tab representa uma aba com WebView e label
 type Tab struct {
 	webView *WebView
@@ -178,7 +215,11 @@ func main() {
 
 	log.Println("✅ Browser iniciado com WebView!")
 	log.Println("📝 Navegue para diferentes sites")
-	log.Println("⌨️  Atalhos: Ctrl+T (nova aba), Ctrl+W (fechar), Alt+← (voltar), Alt+→ (avançar)")
+	log.Println("⌨️  Atalhos:")
+	log.Println("   Ctrl+T (nova aba), Ctrl+W (fechar)")
+	log.Println("   Alt+← (voltar), Alt+→ (avançar), F5 (recarregar)")
+	log.Println("   Ctrl++ (zoom in), Ctrl+- (zoom out), Ctrl+0 (reset zoom)")
+	log.Println("   Ctrl+L (focar URL)")
 
 	gtk.Main()
 }
@@ -346,6 +387,27 @@ func (b *Browser) setupKeyboardShortcuts() {
 			return true
 		}
 
+		// Ctrl++ ou Ctrl+= - Zoom in
+		if ctrlPressed && (keyVal == gdk.KEY_plus || keyVal == gdk.KEY_equal) {
+			log.Println("⌨️  Ctrl++ - Aumentar zoom")
+			b.ZoomIn()
+			return true
+		}
+
+		// Ctrl+- - Zoom out
+		if ctrlPressed && keyVal == gdk.KEY_minus {
+			log.Println("⌨️  Ctrl+- - Diminuir zoom")
+			b.ZoomOut()
+			return true
+		}
+
+		// Ctrl+0 - Reset zoom
+		if ctrlPressed && keyVal == gdk.KEY_0 {
+			log.Println("⌨️  Ctrl+0 - Resetar zoom")
+			b.ZoomReset()
+			return true
+		}
+
 		return false
 	})
 }
@@ -509,6 +571,35 @@ func (b *Browser) CloseCurrentTab() {
 		b.notebook.RemovePage(pageNum)
 		
 		log.Printf("🗑️  Aba fechada (restam: %d)", b.notebook.GetNPages())
+	}
+}
+
+// ZoomIn aumenta o zoom da aba atual
+func (b *Browser) ZoomIn() {
+	webView := b.getCurrentWebView()
+	if webView != nil {
+		webView.ZoomIn()
+		zoom := webView.GetZoomLevel()
+		log.Printf("🔍 Zoom: %.0f%%", zoom*100)
+	}
+}
+
+// ZoomOut diminui o zoom da aba atual
+func (b *Browser) ZoomOut() {
+	webView := b.getCurrentWebView()
+	if webView != nil {
+		webView.ZoomOut()
+		zoom := webView.GetZoomLevel()
+		log.Printf("🔍 Zoom: %.0f%%", zoom*100)
+	}
+}
+
+// ZoomReset reseta o zoom da aba atual
+func (b *Browser) ZoomReset() {
+	webView := b.getCurrentWebView()
+	if webView != nil {
+		webView.ZoomReset()
+		log.Println("🔍 Zoom: 100%")
 	}
 }
 
