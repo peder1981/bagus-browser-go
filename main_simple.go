@@ -100,6 +100,9 @@ static void find_finish(WebKitWebView* webview) {
     WebKitFindController* controller = webkit_web_view_get_find_controller(webview);
     webkit_find_controller_search_finish(controller);
 }
+
+// Função para conectar sinal de download (será chamada do Go)
+// O handler real será implementado em Go
 */
 import "C"
 import (
@@ -262,6 +265,7 @@ type Browser struct {
 	validator       *URLValidator
 	privacyManager  *PrivacyManager
 	bookmarkManager *BookmarkManager
+	downloadManager *DownloadManager
 	findBar         *gtk.Box
 	findEntry       *gtk.Entry
 	findBarVisible  bool
@@ -325,6 +329,14 @@ func NewBrowser() *Browser {
 		log.Printf("⚠️  Erro ao criar bookmark manager: %v", err)
 	}
 	
+	// Criar DownloadManager
+	downloadManager, err := NewDownloadManager()
+	if err != nil {
+		log.Printf("⚠️  Erro ao criar download manager: %v", err)
+	} else {
+		log.Printf("📁 Downloads: %s", downloadManager.GetDownloadPath())
+	}
+	
 	browser := &Browser{
 		window:          win,
 		notebook:        notebook,
@@ -333,6 +345,7 @@ func NewBrowser() *Browser {
 		validator:       NewURLValidator(),
 		privacyManager:  NewPrivacyManager(),
 		bookmarkManager: bookmarkManager,
+		downloadManager: downloadManager,
 	}
 	
 	// Logar informações de privacidade
