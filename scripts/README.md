@@ -1,378 +1,113 @@
 # Scripts de Automação
 
-Scripts multiplataforma para build, teste, desenvolvimento e publicação do Bagus Browser Go.
+Scripts auxiliares para desenvolvimento e manutenção do Bagus Browser.
 
 ## 📋 Scripts Disponíveis
 
-### Publicação no GitHub
+### 🔧 Build e Instalação
 
-Scripts para publicar rapidamente no GitHub com validação automática.
-
-#### Setup Inicial (Linux/macOS)
-
-```bash
-./scripts/setup-github.sh
-```
-
-**Funcionalidades:**
-- Inicializa repositório Git (se necessário)
-- Configura remote (SSH ou HTTPS)
-- Cria commit inicial
-- Faz primeiro push para GitHub
-
-#### Publicação Rápida
-
-**Linux/macOS (Bash)**
-```bash
-./scripts/publish.sh ["mensagem do commit"]
-```
-
-**Windows (Batch)**
-```cmd
-scripts\publish.bat [mensagem do commit]
-```
-
-**Windows (PowerShell)**
-```powershell
-.\scripts\publish.ps1 -Message "mensagem do commit"
-```
-
-**Funcionalidades:**
-- Formata código automaticamente
-- Executa lint (se disponível)
-- Roda todos os testes
-- Compila o projeto
-- Cria commit
-- Faz push para GitHub
-
-**Exemplos:**
-```bash
-# Com mensagem personalizada
-./scripts/publish.sh "feat: adiciona nova funcionalidade"
-
-# Sem mensagem (usa timestamp)
-./scripts/publish.sh
-```
-
-### Build Scripts
-
-Compilam o projeto para diferentes plataformas.
-
-#### Linux/macOS (Bash)
+#### `build_cef.sh`
+Compila a versão CEF (Chromium Embedded Framework) do browser.
 
 ```bash
-./scripts/build.sh [opção]
+./scripts/build_cef.sh
 ```
 
-**Opções:**
-- `current` - Compila para plataforma atual (padrão)
-- `linux` - Compila para Linux (amd64, arm64)
-- `windows` - Compila para Windows (amd64)
-- `macos` - Compila para macOS (amd64, arm64)
-- `all` - Compila para todas as plataformas
+**Características:**
+- 100% compatibilidade com todos os sites
+- Requer CEF instalado (`./scripts/install_cef.sh`)
+- Tamanho: ~165MB
+- DevTools integrado (F12)
 
-**Exemplos:**
+#### `install_cef.sh`
+Instala o CEF (Chromium Embedded Framework).
+
 ```bash
-# Build para plataforma atual
-./scripts/build.sh
-
-# Build para todas as plataformas
-./scripts/build.sh all
-
-# Build apenas para Linux
-./scripts/build.sh linux
+./scripts/install_cef.sh
 ```
 
-#### Windows (Batch)
+**Nota:** Download de ~500MB, instalação única.
 
-```cmd
-scripts\build.bat [opção]
+#### `install-icon.sh`
+Instala o ícone do Bagus Browser no sistema.
+
+```bash
+./scripts/install-icon.sh
 ```
 
-**Opções:** Mesmas do script bash
+Integra o browser com o menu de aplicativos do desktop.
 
-**Exemplos:**
-```cmd
-REM Build para Windows
-scripts\build.bat windows
+### 🧪 Testes e Qualidade
 
-REM Build para todas as plataformas
-scripts\build.bat all
-```
-
-#### Windows (PowerShell)
-
-```powershell
-.\scripts\build.ps1 -Platform [opção]
-```
-
-**Opções:** Mesmas do script bash
-
-**Exemplos:**
-```powershell
-# Build para Windows
-.\scripts\build.ps1 -Platform windows
-
-# Build para todas as plataformas
-.\scripts\build.ps1 -Platform all
-```
-
-### Test Scripts
-
-Executam testes, linting e formatação.
-
-#### Linux/macOS (Bash)
+#### `test.sh`
+Executa testes automatizados, lint e formatação.
 
 ```bash
 ./scripts/test.sh [opção]
 ```
 
 **Opções:**
-- `unit` - Executa apenas testes unitários
-- `coverage` - Executa testes com coverage
-- `lint` - Executa linter (golangci-lint)
-- `fmt` - Formata código (gofmt)
-- `all` - Executa tudo (padrão)
+- `unit` - Testes unitários
+- `coverage` - Testes com coverage
+- `lint` - Linter (golangci-lint)
+- `fmt` - Formatação de código
+- `all` - Tudo (padrão)
 
 **Exemplos:**
 ```bash
-# Executar todos os testes
-./scripts/test.sh
-
-# Apenas testes unitários
-./scripts/test.sh unit
-
-# Gerar coverage
-./scripts/test.sh coverage
+./scripts/test.sh           # Executa tudo
+./scripts/test.sh unit      # Apenas testes
+./scripts/test.sh coverage  # Com coverage
 ```
 
-#### Windows (Batch)
-
-```cmd
-scripts\test.bat [opção]
-```
-
-**Opções:** Mesmas do script bash
-
-**Exemplos:**
-```cmd
-REM Executar todos os testes
-scripts\test.bat all
-
-REM Apenas lint
-scripts\test.bat lint
-```
-
-#### Windows (PowerShell)
-
-```powershell
-.\scripts\test.ps1 -TestType [opção]
-```
-
-**Opções:** Mesmas do script bash
-
-**Exemplos:**
-```powershell
-# Executar todos os testes
-.\scripts\test.ps1 -TestType all
-
-# Apenas coverage
-.\scripts\test.ps1 -TestType coverage
-```
-
-## 🚀 Uso Rápido
-
-### Desenvolvimento Diário
+#### `verify_privacy.sh`
+Verifica que o código não contém telemetria.
 
 ```bash
-# Linux/macOS
-./scripts/test.sh fmt    # Formatar código
-./scripts/test.sh lint   # Verificar qualidade
-./scripts/test.sh unit   # Testar
-./scripts/build.sh       # Compilar
-
-# Windows (PowerShell)
-.\scripts\test.ps1 -TestType fmt
-.\scripts\test.ps1 -TestType lint
-.\scripts\test.ps1 -TestType unit
-.\scripts\build.ps1
+./scripts/verify_privacy.sh
 ```
 
-### Antes de Commit
+Audita o código para garantir zero telemetria e rastreamento.
+
+### 🚀 Git e GitHub
+
+#### `setup-github.sh`
+Configura repositório Git e GitHub.
 
 ```bash
-# Linux/macOS
-./scripts/test.sh all
-
-# Windows
-.\scripts\test.ps1 -TestType all
+./scripts/setup-github.sh
 ```
 
-### Build para Release
+**Funcionalidades:**
+- Inicializa repositório Git
+- Configura remote (SSH/HTTPS)
+- Cria commit inicial
+- Faz primeiro push
 
-```bash
-# Linux/macOS
-./scripts/build.sh all
+## 🎯 Scripts Principais (Raiz do Projeto)
 
-# Windows
-.\scripts\build.ps1 -Platform all
-```
+Para uso diário, utilize os scripts na raiz:
 
-## 📊 Output dos Scripts
+- **`build-all.sh`** - Build completo multiplataforma
+- **`build-deb.sh`** - Cria pacote .deb
+- **`install.sh`** - Instalador rápido
+- **`publish-release.sh`** - Publica release no GitHub
 
-### Build Script
+## 📚 Documentação Adicional
 
-```
-╔════════════════════════════════════════╗
-║   Bagus Browser Go - Build Script    ║
-╚════════════════════════════════════════╝
-
-► Instalando dependências...
-✓ Dependências instaladas
-
-═══ Build Todas as Plataformas ═══
-► Compilando para linux/amd64...
-✓ Build concluído: build/bagus-linux-amd64
-► Compilando para linux/arm64...
-✓ Build concluído: build/bagus-linux-arm64
-...
-
-╔════════════════════════════════════════╗
-║      Build Concluído com Sucesso!     ║
-╚════════════════════════════════════════╝
-```
-
-### Test Script
-
-```
-╔════════════════════════════════════════╗
-║   Bagus Browser Go - Test Script     ║
-╚════════════════════════════════════════╝
-
-═══ Executando Todos os Testes ═══
-► Formatando código...
-✓ Código formatado
-► Executando linter...
-✓ Lint passou
-► Executando testes unitários...
-✓ Todos os testes passaram
-► Executando testes com coverage...
-✓ Testes concluídos
-► Gerando relatório HTML...
-✓ Relatório gerado: coverage.html
-
-═══ Coverage Summary ═══
-total: (statements) 85.2%
-
-╔════════════════════════════════════════╗
-║      Testes Concluídos com Sucesso!   ║
-╚════════════════════════════════════════╝
-```
-
-## 🔧 Requisitos
-
-### Para Build
-
-- **Go**: 1.21 ou superior
-- **Make**: Opcional (scripts funcionam independentemente)
-
-### Para Testes
-
-- **Go**: 1.21 ou superior
-- **golangci-lint**: Instalado automaticamente se não encontrado
-
-## 📝 Notas
-
-### Permissões (Linux/macOS)
-
-Os scripts bash precisam de permissão de execução:
-
-```bash
-chmod +x scripts/*.sh
-```
-
-### Execução no Windows
-
-#### PowerShell Execution Policy
-
-Se encontrar erro de política de execução:
-
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-#### Executar do CMD
-
-```cmd
-powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -Platform all
-```
-
-### Cross-Compilation
-
-Os scripts suportam cross-compilation. Você pode compilar para qualquer plataforma de qualquer sistema operacional.
-
-**Exemplo:** Compilar para Windows a partir do Linux:
-
-```bash
-./scripts/build.sh windows
-```
-
-## 🐛 Troubleshooting
-
-### "go: command not found"
-
-**Solução:** Instale Go ou adicione ao PATH
-
-```bash
-# Linux/macOS
-export PATH=$PATH:/usr/local/go/bin
-
-# Windows
-setx PATH "%PATH%;C:\Go\bin"
-```
-
-### "golangci-lint: command not found"
-
-**Solução:** O script instalará automaticamente, ou instale manualmente:
-
-```bash
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-```
-
-### "Permission denied" (Linux/macOS)
-
-**Solução:** Torne o script executável
-
-```bash
-chmod +x scripts/build.sh
-chmod +x scripts/test.sh
-```
-
-### Build falha com erro de memória
-
-**Solução:** Compile plataformas individualmente
-
-```bash
-./scripts/build.sh linux
-./scripts/build.sh windows
-./scripts/build.sh macos
-```
-
-## 📚 Recursos Adicionais
-
-- [Makefile](../Makefile) - Alternativa aos scripts
-- [DEVELOPMENT.md](../docs/DEVELOPMENT.md) - Guia de desenvolvimento
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - Guia de contribuição
+- [README.md](../README.md) - Documentação principal
+- [RELEASE_INSTRUCTIONS.md](../RELEASE_INSTRUCTIONS.md) - Como publicar releases
+- [SCRIPTS_ANALYSIS.md](../SCRIPTS_ANALYSIS.md) - Análise de scripts
 
 ## 🤝 Contribuindo
 
-Se você melhorar os scripts, por favor:
+Ao modificar scripts:
 
-1. Teste em todas as plataformas (Linux, Windows, macOS)
-2. Mantenha compatibilidade com versões anteriores
+1. Teste em ambiente limpo
+2. Mantenha compatibilidade
 3. Atualize esta documentação
-4. Abra um Pull Request
+4. Use shellcheck para validar
 
 ---
 
-**Última Atualização:** 2024-10-20
+**Última Atualização:** 2025-10-21
