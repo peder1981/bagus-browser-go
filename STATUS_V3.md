@@ -1,10 +1,12 @@
 # 🎊 Status da Reconstrução v3.0.0
 
-## ✅ IMPLEMENTAÇÃO COMPLETA
+## ✅ IMPLEMENTAÇÃO COMPLETA (REVISADA)
 
 **Data:** 2025-10-21  
-**Tempo:** ~2 horas  
-**Status:** ✅ **FUNCIONAL E PRONTO PARA TESTES**
+**Tempo:** ~3 horas  
+**Status:** ✅ **FUNCIONAL - WebView Simples com Atalhos**
+
+**⚠️ Nota:** Arquitetura de 2 janelas não é viável (ver LESSONS_LEARNED.md)
 
 ---
 
@@ -24,54 +26,48 @@
 
 ### Resultado Final
 - **Binário:** 6.6MB (leve!)
-- **Arquitetura:** 2 janelas (Control + Content)
-- **Tecnologias:** Go + GTK3 + WebView
+- **Arquitetura:** WebView simples com atalhos JavaScript
+- **Tecnologias:** Go + WebView + JavaScript
 - **Segurança:** Validação + Sanitização integradas
 
 ---
 
-## 🏗️ Arquitetura Implementada
+## 🏗️ Arquitetura Implementada (REVISADA)
 
 ```
 ┌─────────────────────────────────────────┐
-│  Janela de Controle (GTK3)              │
-│  ┌───┐┌───┐┌───┐┌──────────────────┐   │
-│  │ ← ││ → ││ ⟳ ││ URL Input        │   │
-│  └───┘└───┘└───┘└──────────────────┘   │
-└─────────────────────────────────────────┘
-              ↓ IPC Channel
-┌─────────────────────────────────────────┐
-│  Janela de Conteúdo (WebView)           │
+│  Bagus Browser v3.0.0 (WebView)         │
 │                                          │
 │  [Site renderizado aqui]                │
 │                                          │
+│  Atalhos:                                │
+│  Ctrl+L - Navegar                        │
+│  Alt+←  - Voltar                         │
+│  Alt+→  - Avançar                        │
+│  F5     - Recarregar                     │
 └─────────────────────────────────────────┘
 ```
+
+**Nota:** Arquitetura de 2 janelas (GTK + WebView) não é viável.
+Ver `LESSONS_LEARNED.md` para detalhes técnicos.
 
 ---
 
 ## ✅ Features Implementadas
 
-### Janela de Controle
-- ✅ Barra de navegação persistente
-- ✅ Botões: Voltar, Avançar, Recarregar, Parar
-- ✅ Campo de URL com Enter
-- ✅ Spinner de carregamento
-- ✅ Atualização automática de URL
-- ✅ Atualização de título
-
-### Janela de Conteúdo
-- ✅ WebView para renderização
+### WebView
+- ✅ Renderização completa de sites
 - ✅ Navegação funcional
 - ✅ Histórico (back/forward)
 - ✅ Recarregar página
-- ✅ Parar carregamento
+- ✅ JavaScript habilitado
 
-### Comunicação IPC
-- ✅ Canal bidirecional
-- ✅ Mensagens tipadas
-- ✅ Thread-safe
-- ✅ Buffer de 10 mensagens
+### Atalhos de Teclado (JavaScript)
+- ✅ Ctrl+L - Navegar (prompt)
+- ✅ Alt+← - Voltar
+- ✅ Alt+→ - Avançar
+- ✅ F5/Ctrl+R - Recarregar
+- ✅ Injetado em todas as páginas via w.Init()
 
 ### Segurança
 - ✅ Validação de URLs
