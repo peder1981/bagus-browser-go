@@ -1,0 +1,23 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Bagus Browser
+GenericName=Web Browser
+Comment=Browser minimalista, seguro e privado
+Exec=bagus-browser %u
+Icon=bagus-browser
+Terminal=false
+Categories=Network;WebBrowser;
+Keywords=browser;web;internet;navegador;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+StartupNotify=true
+StartupWMClass=bagus-browser
+Actions=NewWindow;NewPrivateWindow;
+
+[Desktop Action NewWindow]
+Name=Nova Janela
+Exec=bagus-browser
+
+[Desktop Action NewPrivateWindow]
+Name=Nova Janela Privada
+Exec=bagus-browser --private
