@@ -100,18 +100,18 @@ build-cef:
 	@echo "$(GREEN)╔════════════════════════════════════════╗$(NC)"
 	@echo "$(GREEN)║   Compilando Versão CEF               ║$(NC)"
 	@echo "$(GREEN)╚════════════════════════════════════════╝$(NC)"
-	@./scripts/build_cef.sh
+	@./scripts/build/build_cef.sh
 
 # Instalar CEF
 install-cef:
 	@echo "$(GREEN)╔════════════════════════════════════════╗$(NC)"
 	@echo "$(GREEN)║   Instalando CEF                      ║$(NC)"
 	@echo "$(GREEN)╚════════════════════════════════════════╝$(NC)"
-	@./scripts/install_cef.sh
+	@./scripts/setup/install_cef.sh
 
 # Verificar privacidade (zero telemetria)
 verify-privacy:
-	@./scripts/verify_privacy.sh
+	@./scripts/testing/verify_privacy.sh
 
 # Build para Linux
 build-linux:
