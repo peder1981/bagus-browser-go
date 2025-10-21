@@ -91,7 +91,9 @@ build-webview: deps
 	@echo "$(GREEN)╔════════════════════════════════════════╗$(NC)"
 	@echo "$(GREEN)║   Compilando Versão Webview           ║$(NC)"
 	@echo "$(GREEN)╚════════════════════════════════════════╝$(NC)"
-	@./scripts/build.sh
+	@mkdir -p $(BUILD_DIR)
+	$(GO_BUILD) -o $(BUILD_DIR)/$(APP_NAME) ./$(CMD_DIR)
+	@echo "$(GREEN)✓ Build concluído: $(BUILD_DIR)/$(APP_NAME)$(NC)"
 
 # Build versão CEF (100% compatibilidade)
 build-cef:
