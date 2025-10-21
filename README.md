@@ -1,4 +1,4 @@
-# 🌐 Bagus Browser v4.0
+# 🌐 Bagus Browser v4.1
 
 **Browser minimalista, seguro e privado construído em Go**
 
@@ -9,9 +9,9 @@
 > ⚠️ **Nota:** Este browser é compatível apenas com **Linux**. Requer GTK3 e WebKit2GTK-4.0.
 
 **Status:** ✅ Produção  
-**Tamanho:** 5.5MB  
+**Tamanho:** 6.4MB  
 **Tecnologia:** Go + GTK3 + WebKit2GTK-4.0 (via CGO)  
-**Versão:** 4.0.0
+**Versão:** 4.1.0
 
 ---
 

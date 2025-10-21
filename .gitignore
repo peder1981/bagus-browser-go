@@ -1,0 +1,286 @@
+# Bagus Browser - .gitignore
+
+# ============================================
+# DADOS SENSÍVEIS E PRIVADOS
+# ============================================
+
+# Tokens e credenciais
+*.token
+*.key
+*.pem
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+
+# Cache de autenticação OAuth2
+.config/
+github_token.cache*
+
+# Configurações do usuário
+config.json
+settings.json
+user-data/
+profile/
+
+# Favoritos e histórico (dados do usuário)
+*.db
+*.sqlite
+*.sqlite3
+bookmarks.enc
+history.enc
+cookies.txt
+
+# Senhas e dados criptografados
+passwords/
+vault/
+*.enc
+*.encrypted
+
+# ============================================
+# BUILD E COMPILAÇÃO
+# ============================================
+
+# Binários
+bagus-browser
+bagus-webkit
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.o
+
+# Diretórios de build
+build/
+dist/
+bin/
+pkg/
+target/
+out/
+
+# Arquivos temporários de build
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ============================================
+# GO
+# ============================================
+
+# Binários Go
+*.test
+*.out
+*.prof
+
+# Vendor (se usar)
+vendor/
+
+# Go workspace
+go.work
+go.work.sum
+
+# Coverage
+*.coverprofile
+coverage.txt
+coverage.html
+
+# ============================================
+# IDE E EDITORES
+# ============================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# GoLand / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
+*.swp
+*.swo
+*.swn
+.*.sw?
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================
+# SISTEMA OPERACIONAL
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ============================================
+# TESTES E DEBUG
+# ============================================
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Debug
+debug/
+*.debug
+*.pprof
+
+# Test coverage
+*.out
+coverage/
+
+# ============================================
+# DOCUMENTAÇÃO TEMPORÁRIA
+# ============================================
+
+# Arquivos temporários de documentação
+*.draft
+*.wip
+TODO.local
+NOTES.local
+
+# ============================================
+# RELEASES E PACOTES
+# ============================================
+
+# Pacotes já buildados (não commitar)
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+*.dmg
+*.pkg
+
+# Checksums (gerados automaticamente)
+SHA256SUMS
+MD5SUMS
+
+# ============================================
+# CACHE E TEMPORÁRIOS
+# ============================================
+
+# Cache geral
+.cache/
+cache/
+tmp/
+temp/
+
+# Node modules (se usar ferramentas JS)
+node_modules/
+npm-debug.log*
+
+# Python (se usar scripts Python)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+ENV/
+
+# ============================================
+# SEGURANÇA
+# ============================================
+
+# Certificados e chaves privadas
+*.crt
+*.cer
+*.der
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Secrets
+secrets/
+.secrets/
+*.secret
+
+# ============================================
+# BACKUP
+# ============================================
+
+# Backups
+*.bak
+*.backup
+*.old
+*.orig
+*-backup
+*-old
+
+# ============================================
+# ESPECÍFICO DO PROJETO
+# ============================================
+
+# Dados de teste do usuário
+test-data/
+test-profile/
+test-bookmarks/
+
+# Screenshots e capturas
+screenshots/
+captures/
+*.png
+*.jpg
+*.jpeg
+!assets/**/*.png
+!assets/**/*.jpg
+!docs/**/*.png
+
+# Dados de desenvolvimento
+dev-data/
+local-data/
+
+# ============================================
+# CI/CD
+# ============================================
+
+# Artifacts
+artifacts/
+.artifacts/
+
+# ============================================
+# PERMITIR (EXCEÇÕES)
+# ============================================
+
+# Permitir ícones e assets
+!assets/
+!assets/**
+!docs/
+
+# Permitir exemplos
+!examples/
+!examples/**
+
+# Permitir templates
+!templates/
+!templates/**
