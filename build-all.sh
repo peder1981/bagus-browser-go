@@ -65,7 +65,7 @@ cd ..
 
 # Cria pacote .deb para Debian/Ubuntu
 echo -e "${YELLOW}► Criando pacote .deb...${NC}"
-./build-deb.sh
+./scripts/packaging/build-deb.sh
 
 echo ""
 echo -e "${GREEN}╔═══════════════════════════════════════╗${NC}"
