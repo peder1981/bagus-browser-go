@@ -31,6 +31,14 @@ static gboolean can_go_back(WebKitWebView* webview) {
 static gboolean can_go_forward(WebKitWebView* webview) {
     return webkit_web_view_can_go_forward(webview);
 }
+
+static const char* get_uri(WebKitWebView* webview) {
+    return webkit_web_view_get_uri(webview);
+}
+
+static const char* get_title(WebKitWebView* webview) {
+    return webkit_web_view_get_title(webview);
+}
 */
 import "C"
 import (
@@ -101,12 +109,36 @@ func (w *WebView) Reload() {
 	C.reload_page(w.cWebView)
 }
 
+// GetURI retorna a URI atual
+func (w *WebView) GetURI() string {
+	cURI := C.get_uri(w.cWebView)
+	if cURI == nil {
+		return ""
+	}
+	return C.GoString(cURI)
+}
+
+// GetTitle retorna o título da página
+func (w *WebView) GetTitle() string {
+	cTitle := C.get_title(w.cWebView)
+	if cTitle == nil {
+		return ""
+	}
+	return C.GoString(cTitle)
+}
+
+// Tab representa uma aba com WebView e label
+type Tab struct {
+	webView *WebView
+	label   *gtk.Label
+}
+
 // Browser representa o navegador
 type Browser struct {
 	window   *gtk.Window
 	notebook *gtk.Notebook
 	urlEntry *gtk.Entry
-	tabs     []*WebView
+	tabs     []*Tab
 }
 
 func main() {
@@ -154,7 +186,7 @@ func NewBrowser() *Browser {
 		window:   win,
 		notebook: notebook,
 		urlEntry: urlEntry,
-		tabs:     make([]*WebView, 0),
+		tabs:     make([]*Tab, 0),
 	}
 
 	// Criar toolbar
@@ -298,10 +330,6 @@ func (b *Browser) NewTab(url string) {
 		return
 	}
 
-	// Adicionar ao slice
-	b.tabs = append(b.tabs, webView)
-	tabIndex := len(b.tabs) - 1
-
 	// Criar container scrollable
 	scrolled, err := gtk.ScrolledWindowNew(nil, nil)
 	if err != nil {
@@ -310,12 +338,58 @@ func (b *Browser) NewTab(url string) {
 	}
 	scrolled.Add(webView.Widget())
 
-	// Criar label da aba
-	tabLabel, _ := gtk.LabelNew(fmt.Sprintf("Aba %d", tabIndex+1))
+	// Criar label da aba (começa com "Carregando...")
+	tabLabel, _ := gtk.LabelNew("Carregando...")
 
-	// Adicionar aba
+	// Criar Tab
+	tab := &Tab{
+		webView: webView,
+		label:   tabLabel,
+	}
+
+	// Adicionar ao slice
+	b.tabs = append(b.tabs, tab)
+	tabIndex := len(b.tabs) - 1
+
+	// Adicionar aba ao notebook
 	pageNum := b.notebook.AppendPage(scrolled, tabLabel)
 	b.notebook.SetCurrentPage(pageNum)
+
+	// Conectar sinal notify::title para atualizar label
+	webView.widget.Connect("notify::title", func() {
+		title := webView.GetTitle()
+		uri := webView.GetURI()
+		
+		// Usar título se disponível, senão usar URI
+		if title != "" && title != "about:blank" {
+			tabLabel.SetText(title)
+		} else if uri != "" && uri != "about:blank" {
+			tabLabel.SetText(uri)
+		}
+		
+		// Atualizar URL entry se for a aba atual
+		if b.notebook.GetCurrentPage() == pageNum {
+			if uri != "" {
+				b.urlEntry.SetText(uri)
+			}
+		}
+	})
+
+	// Conectar sinal notify::uri para atualizar quando URL mudar
+	webView.widget.Connect("notify::uri", func() {
+		uri := webView.GetURI()
+		if uri != "" && uri != "about:blank" {
+			// Se não tiver título ainda, mostrar URI
+			if webView.GetTitle() == "" {
+				tabLabel.SetText(uri)
+			}
+			
+			// Atualizar URL entry se for a aba atual
+			if b.notebook.GetCurrentPage() == pageNum {
+				b.urlEntry.SetText(uri)
+			}
+		}
+	})
 
 	// Carregar URL
 	webView.LoadURI(url)
@@ -331,7 +405,7 @@ func (b *Browser) getCurrentWebView() *WebView {
 	if pageNum < 0 || pageNum >= len(b.tabs) {
 		return nil
 	}
-	return b.tabs[pageNum]
+	return b.tabs[pageNum].webView
 }
 
 // Navigate navega na aba atual
