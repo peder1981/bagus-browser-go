@@ -4,8 +4,32 @@ package main
 #cgo pkg-config: webkit2gtk-4.0
 #include <webkit2/webkit2.h>
 
+// Configurar WebView com segurança
+static void configure_webview_security(WebKitWebView* webview) {
+    WebKitSettings* settings = webkit_web_view_get_settings(webview);
+    
+    // JavaScript necessário para sites modernos
+    webkit_settings_set_enable_javascript(settings, TRUE);
+    
+    // Desabilitar plugins (segurança)
+    webkit_settings_set_enable_plugins(settings, FALSE);
+    
+    // Desabilitar Java (segurança)
+    webkit_settings_set_enable_java(settings, FALSE);
+    
+    // User agent customizado
+    webkit_settings_set_user_agent(settings, 
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Bagus/4.0");
+    
+    // Habilitar proteções
+    webkit_settings_set_enable_dns_prefetching(settings, FALSE);
+    webkit_settings_set_enable_page_cache(settings, FALSE);
+}
+
 static WebKitWebView* create_webview() {
-    return WEBKIT_WEB_VIEW(webkit_web_view_new());
+    WebKitWebView* webview = WEBKIT_WEB_VIEW(webkit_web_view_new());
+    configure_webview_security(webview);
+    return webview;
 }
 
 static void load_uri(WebKitWebView* webview, const char* uri) {
@@ -135,10 +159,11 @@ type Tab struct {
 
 // Browser representa o navegador
 type Browser struct {
-	window   *gtk.Window
-	notebook *gtk.Notebook
-	urlEntry *gtk.Entry
-	tabs     []*Tab
+	window      *gtk.Window
+	notebook    *gtk.Notebook
+	urlEntry    *gtk.Entry
+	tabs        []*Tab
+	validator   *URLValidator
 }
 
 func main() {
@@ -183,10 +208,11 @@ func NewBrowser() *Browser {
 	}
 
 	browser := &Browser{
-		window:   win,
-		notebook: notebook,
-		urlEntry: urlEntry,
-		tabs:     make([]*Tab, 0),
+		window:    win,
+		notebook:  notebook,
+		urlEntry:  urlEntry,
+		tabs:      make([]*Tab, 0),
+		validator: NewURLValidator(),
 	}
 
 	// Criar toolbar
@@ -409,19 +435,25 @@ func (b *Browser) getCurrentWebView() *WebView {
 }
 
 // Navigate navega na aba atual
-func (b *Browser) Navigate(url string) {
+func (b *Browser) Navigate(input string) {
 	webView := b.getCurrentWebView()
 	if webView == nil {
 		return
 	}
 
-	// Adicionar https:// se necessário
-	if len(url) > 0 && url[0] != 'h' {
-		url = "https://" + url
+	// Sanitizar input
+	input = SanitizeInput(input)
+	
+	// Validar e processar URL
+	validURL, err := b.validator.ValidateAndSanitize(input)
+	if err != nil {
+		log.Printf("⚠️  Erro ao validar URL: %v", err)
+		// Mostrar erro ao usuário (pode adicionar dialog depois)
+		return
 	}
 
-	log.Printf("🌐 Navegando para: %s", url)
-	webView.LoadURI(url)
+	log.Printf("🌐 Navegando para: %s", validURL)
+	webView.LoadURI(validURL)
 }
 
 // GoBack volta na história da aba atual
