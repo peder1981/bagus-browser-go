@@ -1,10 +1,9 @@
-# Bagus Browser Go - Makefile
-# Builds multiplataforma e automação de tarefas
-# Suporta duas versões: Webview (leve) e CEF (100% compatível)
+# Bagus Browser Go - Makefile v3.0.0
+# Arquitetura 2 janelas: Control (GTK) + Content (WebView)
 
 # Variáveis
 APP_NAME := bagus
-VERSION := 2.0.0-alpha
+VERSION := 3.0.0
 BUILD_DIR := build
 DIST_DIR := dist
 CMD_DIR := .
@@ -31,10 +30,10 @@ GREEN := \033[0;32m
 YELLOW := \033[1;33m
 NC := \033[0m # No Color
 
-.PHONY: all build clean test lint fmt deps help menu build-webview build-cef install-cef verify-privacy run-cef
+.PHONY: all build clean test lint fmt deps help run
 
 # Target padrão
-all: clean deps fmt lint test build
+all: clean deps fmt test build
 
 # Help
 help:
