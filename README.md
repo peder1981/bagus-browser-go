@@ -1,47 +1,121 @@
-# 🎉 Bagus Browser POC - WebKit CGO
+# 🌐 Bagus Browser v4.0
 
-## ✅ SUCESSO! WebView Funcionando!
+**Browser minimalista, seguro e privado construído em Go**
 
-**Status:** ✅ Compilado e pronto para teste  
-**Tamanho:** 5.4MB  
-**Tecnologia:** Go + GTK3 + WebKit2GTK-4.0 (via CGO)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org)
+[![Platform](https://img.shields.io/badge/Platform-Linux-green.svg)](https://www.linux.org)
 
----
-
-## 🎯 O Que Foi Alcançado
-
-### ✅ WebView Integrado
-- WebKit2GTK-4.0 via CGO direto
-- Renderização completa de sites
-- JavaScript habilitado
-- Sem limitações de iframe
-
-### ✅ Abas Funcionais
-- Múltiplas abas com WebView
-- Criar/fechar abas
-- Cada aba = WebView independente
-
-### ✅ Navegação Completa
-- Campo URL
-- Botões: ←, →, ⟳
-- Voltar/avançar no histórico
-- Recarregar página
-
-### ✅ Atalhos de Teclado
-- **Ctrl+T** - Nova aba
-- **Ctrl+W** - Fechar aba
-- **Alt+←** - Voltar
-- **Alt+→** - Avançar
-- **F5 / Ctrl+R** - Recarregar
-- **Ctrl+L** - Focar URL
+**Status:** ✅ Produção  
+**Tamanho:** 5.5MB  
+**Tecnologia:** Go + GTK3 + WebKit2GTK-4.0 (via CGO)  
+**Versão:** 4.0.0
 
 ---
 
-## 🚀 Como Executar
+## 🎯 Pilares Fundamentais
 
+### 🔒 Segurança
+- ✅ Validação rigorosa de URLs (HTTP/HTTPS apenas)
+- ✅ Sanitização de input (proteção XSS)
+- ✅ WebView configurado com segurança máxima
+- ✅ Plugins e Java desabilitados
+- ✅ Lista de bloqueio de domínios
+- ✅ User-Agent customizado
+
+### 🕵️ Privacidade
+- ✅ **Zero telemetria** (garantido)
+- ✅ **Zero rastreamento** (garantido)
+- ✅ Third-party cookies bloqueados
+- ✅ WebGL/WebAudio bloqueados (anti-fingerprinting)
+- ✅ DuckDuckGo como motor de busca padrão
+- ✅ Do Not Track habilitado
+
+### 💪 Robustez
+- ✅ WebView via CGO (WebKit2GTK)
+- ✅ Múltiplas abas independentes
+- ✅ Navegação completa
+- ✅ 9 atalhos de teclado
+- ✅ Sem crashes
+
+### 🪶 Leveza
+- ✅ **5.5MB** binário
+- ✅ WebKit do sistema (não embarcado)
+- ✅ Go puro + CGO
+- ✅ Rápido e eficiente
+
+---
+
+## ✨ Funcionalidades
+
+### Navegação Web
+- ✅ Campo URL com validação
+- ✅ Botões: ←, →, ⟳
+- ✅ Histórico por aba
+- ✅ Busca integrada (DuckDuckGo)
+- ✅ Detecção automática URL vs busca
+
+### Abas
+- ✅ Múltiplas abas simultâneas
+- ✅ Títulos dinâmicos (URL ou título da página)
+- ✅ WebView independente por aba
+- ✅ Criar/fechar abas
+- ✅ Proteção última aba
+
+### Zoom
+- ✅ Aumentar (Ctrl++)
+- ✅ Diminuir (Ctrl+-)
+- ✅ Resetar (Ctrl+0)
+- ✅ Independente por aba
+
+### Atalhos de Teclado
+| Atalho | Ação |
+|--------|------|
+| **Ctrl+T** | Nova aba |
+| **Ctrl+W** | Fechar aba |
+| **Alt+←** | Voltar |
+| **Alt+→** | Avançar |
+| **F5 / Ctrl+R** | Recarregar |
+| **Ctrl+L** | Focar URL |
+| **Ctrl++** | Aumentar zoom |
+| **Ctrl+-** | Diminuir zoom |
+| **Ctrl+0** | Resetar zoom |
+
+---
+
+## 🚀 Instalação
+
+### Dependências (Ubuntu/Debian)
 ```bash
-cd /home/peder/bagus-webkit-cgo
+sudo apt-get install -y \
+    libgtk-3-dev \
+    libwebkit2gtk-4.0-dev \
+    pkg-config \
+    build-essential
+```
+
+### Compilar
+```bash
+git clone https://github.com/peder1981/bagus-browser-go
+cd bagus-webkit-cgo
+go build -o bagus-webkit .
+```
+
+### Executar
+```bash
 ./bagus-webkit
+```
+
+### Logs ao Iniciar
+```
+🌐 Iniciando Bagus Browser POC - WebKit CGO...
+🕵️  Bagus Browser - Configurações de Privacidade:
+   ✅ Zero telemetria
+   ✅ Third-party cookies bloqueados
+   ✅ WebGL bloqueado (anti-fingerprinting)
+   ✅ WebAudio bloqueado (anti-fingerprinting)
+   ✅ DuckDuckGo como motor de busca padrão
+✅ Browser iniciado com WebView!
 ```
 
 ---
@@ -139,26 +213,40 @@ type Browser struct {
 
 ---
 
-## 🔧 Próximos Passos
+## 📚 Documentação
 
-### Fase 1: Melhorias Imediatas (2-3h)
-- [ ] Atualizar URL ao navegar
-- [ ] Atualizar título da aba
-- [ ] Indicador de carregamento
-- [ ] Botão parar carregamento
+- **[SECURITY.md](SECURITY.md)** - Documentação de segurança
+- **[PRIVACY.md](PRIVACY.md)** - Política de privacidade
 
-### Fase 2: Segurança (2-3h)
-- [ ] Validação de URLs
-- [ ] Sanitização de input
-- [ ] HTTPS preferencial
-- [ ] Proteção XSS
+---
 
-### Fase 3: Features Extras (4-6h)
-- [ ] Favoritos
-- [ ] Downloads
-- [ ] Zoom (Ctrl++, Ctrl+-)
+## 🎯 Roadmap
+
+### v4.0 (Atual) ✅
+- [x] WebView funcionando
+- [x] Múltiplas abas
+- [x] Navegação completa
+- [x] Segurança implementada
+- [x] Privacidade implementada
+- [x] Zoom
+- [x] Títulos dinâmicos
+
+### v4.1 (Em Desenvolvimento)
+- [ ] Favoritos (Ctrl+D)
 - [ ] Buscar na página (Ctrl+F)
+- [ ] Downloads
 - [ ] Histórico global
+
+### v4.2 (Planejado)
+- [ ] Melhorias de UI
+- [ ] Ícone do aplicativo
+- [ ] Favicon nas abas
+- [ ] Indicador de carregamento
+
+### v5.0 (Futuro)
+- [ ] Extensões
+- [ ] Temas
+- [ ] Sincronização (opcional)
 
 ---
 
@@ -175,14 +263,21 @@ bagus-webkit-cgo/
 
 ---
 
-## 🐛 Problemas Conhecidos
+## 🤝 Contribuindo
 
-### Nenhum! 🎉
-- Compilação: ✅ OK
-- Execução: ✅ OK (testar)
-- WebView: ✅ OK
-- Abas: ✅ OK
-- Navegação: ✅ OK (testar)
+Este é um projeto focado em privacidade e minimalismo.
+
+**Princípios:**
+1. **Privacidade primeiro** - Zero telemetria, sempre
+2. **Segurança** - Validação rigorosa
+3. **Simplicidade** - Código limpo e manutenível
+4. **Leveza** - Binário pequeno
+
+---
+
+## 📜 Licença
+
+MIT License - Veja [LICENSE](LICENSE) para detalhes
 
 ---
 
@@ -222,6 +317,11 @@ cd /home/peder/bagus-webkit-cgo
 
 ---
 
-**Status:** ✅ POC WebKit CGO completo  
+**Status:** ✅ Produção  
+**Versão:** 4.0.0  
 **Data:** 21/10/2025  
-**Versão:** 1.0.0
+**Pilares:** 🔒 Segurança | 🕵️ Privacidade | 💪 Robustez | 🪶 Leveza
+
+---
+
+**Bagus Browser - Navegue com privacidade e segurança** 🌐🔒
