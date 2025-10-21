@@ -24,7 +24,7 @@ func NewLoginDialog() *LoginDialog {
 
 // Show exibe o diálogo de login
 func (l *LoginDialog) Show() (string, error) {
-	debug := true
+	debug := false
 	w := webview.New(debug)
 	defer w.Destroy()
 

@@ -6,11 +6,19 @@ import (
 	"path/filepath"
 
 	"github.com/peder1981/bagus-browser-go/internal/config"
+	"github.com/peder1981/bagus-browser-go/internal/lockfile"
 	"github.com/peder1981/bagus-browser-go/internal/ui"
 )
 
 func main() {
 	log.Println("Iniciando Bagus Browser...")
+
+	// Verifica se já existe outra instância rodando
+	lock := lockfile.New("bagus-browser")
+	if err := lock.TryLock(); err != nil {
+		log.Fatalf("Erro: %v", err)
+	}
+	defer lock.Unlock()
 
 	// Mostra tela de login
 	loginDialog := ui.NewLoginDialog()
@@ -35,7 +43,7 @@ func main() {
 	}
 
 	// Cria e inicia browser
-	browser, err := ui.NewBrowser(userPath, cfg)
+	browser, err := ui.NewBrowserSingleWindow(userPath, cfg)
 	if err != nil {
 		log.Fatalf("Erro ao criar browser: %v", err)
 	}
