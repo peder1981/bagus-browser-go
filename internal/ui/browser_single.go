@@ -70,9 +70,14 @@ func (b *BrowserSingleWindow) Run() error {
 	// Bind funções
 	b.bindFunctions()
 
-	// Carrega interface HTML com iframe
-	html := b.generateHTML()
-	w.SetHtml(html)
+	// Navega diretamente para URL inicial
+	initialURL := b.config.Default.URL
+	if initialURL == "" {
+		initialURL = "https://duckduckgo.com"
+	}
+	
+	log.Printf("Navegando para URL inicial: %s", initialURL)
+	w.Navigate(initialURL)
 
 	w.Run()
 	return nil
@@ -98,7 +103,7 @@ func (b *BrowserSingleWindow) bindFunctions() {
 	})
 }
 
-// navigate processa e navega para URL (retorna URL processada)
+// navigate processa e navega para URL
 func (b *BrowserSingleWindow) navigate(input string) string {
 	// Processa input
 	finalURL := b.processInput(input)
@@ -125,8 +130,11 @@ func (b *BrowserSingleWindow) navigate(input string) string {
 	// Adiciona ao histórico
 	b.history.Add(finalURL, finalURL)
 
-	// Retorna URL para navegação via iframe
+	// Navega diretamente
 	log.Printf("Navegando para: %s", finalURL)
+	if b.w != nil {
+		b.w.Navigate(finalURL)
+	}
 	return finalURL
 }
 
