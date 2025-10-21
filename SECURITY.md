@@ -39,10 +39,14 @@ Se você descobrir uma vulnerabilidade de segurança no Bagus Browser Go, por fa
 O Bagus Browser Go implementa múltiplas camadas de segurança:
 
 #### 1. Criptografia
-- **AES-256-GCM**: Criptografia de dados do usuário
-- **Argon2id**: Derivação de chaves de senha
-- **ChaCha20-Poly1305**: Criptografia de comunicação
-- **HKDF**: Expansão de chaves
+- **AES-256-GCM**: Criptografia autenticada de dados do usuário (histórico, favoritos)
+  - Tamanho de chave: 256 bits
+  - Modo: Galois/Counter Mode (autenticação integrada)
+  - Nonce: 12 bytes aleatórios por operação
+- **PBKDF2-SHA256**: Derivação de chaves (100.000 iterações)
+- **Salt**: 32 bytes aleatórios por usuário
+- **Armazenamento**: Base64 para dados criptografados
+- **Permissões**: Arquivos com modo 0600 (apenas owner)
 
 #### 2. Isolamento
 - **Sandboxing**: Processos isolados por plataforma
@@ -68,6 +72,52 @@ O Bagus Browser Go implementa múltiplas camadas de segurança:
 - **Armazenamento Local**: Todos os dados ficam localmente
 - **Criptografia em Repouso**: Dados sensíveis sempre criptografados
 - **Memória Segura**: Limpeza de memória após uso
+
+### Criptografia de Histórico e Dados Sensíveis
+
+#### Implementação
+
+O histórico de navegação e outros dados sensíveis são protegidos com criptografia de nível militar:
+
+**Algoritmo**: AES-256-GCM (Advanced Encryption Standard com Galois/Counter Mode)
+- Aprovado pela NSA para informações TOP SECRET
+- Autenticação integrada (AEAD - Authenticated Encryption with Associated Data)
+- Proteção contra adulteração de dados
+
+**Geração de Chaves**:
+1. Material de chave aleatório (32 bytes) gerado via `crypto/rand`
+2. Salt aleatório único por usuário (32 bytes)
+3. Derivação via PBKDF2-SHA256 com 100.000 iterações
+4. Chaves armazenadas com permissões 0600 (apenas owner pode ler)
+
+**Processo de Criptografia**:
+```
+Dados Originais (JSON) 
+  → Serialização
+  → AES-256-GCM Encrypt (com nonce aleatório)
+  → Base64 Encoding
+  → Arquivo .encrypted (modo 0600)
+```
+
+**Segurança Adicional**:
+- Cada operação usa nonce único (12 bytes aleatórios)
+- Tag de autenticação GCM valida integridade
+- Migração automática de dados não criptografados
+- Rotação de chaves disponível via API
+- Destruição segura de chaves (sobrescrita antes de deletar)
+
+**Arquivos Protegidos**:
+- `history.encrypted` - Histórico de navegação
+- `.encryption_key` - Chave de criptografia (0600)
+- `.encryption_salt` - Salt para derivação (0600)
+
+#### Garantias de Segurança
+
+✅ **Confidencialidade**: Apenas o usuário pode descriptografar seus dados
+✅ **Integridade**: Qualquer adulteração é detectada automaticamente
+✅ **Autenticidade**: GCM garante que dados não foram modificados
+✅ **Isolamento**: Cada usuário tem chaves únicas e independentes
+✅ **Forward Secrecy**: Rotação de chaves não compromete dados antigos
 
 ### Configurações de Segurança Padrão
 

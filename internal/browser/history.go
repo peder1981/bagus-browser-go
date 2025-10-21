@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/peder1981/bagus-browser-go/internal/security"
 )
 
 const (
@@ -22,16 +24,32 @@ type HistoryEntry struct {
 
 // History gerencia o histórico de navegação
 type History struct {
-	entries []HistoryEntry
-	path    string
-	mu      sync.RWMutex
+	entries   []HistoryEntry
+	path      string
+	encryptor *security.Encryptor
+	mu        sync.RWMutex
 }
 
 // NewHistory cria novo gerenciador de histórico
 func NewHistory(storagePath string) (*History, error) {
+	// Cria encryptor para este usuário
+	encryptor, err := security.NewEncryptor(storagePath)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao criar encryptor: %w", err)
+	}
+
 	h := &History{
-		entries: make([]HistoryEntry, 0),
-		path:    filepath.Join(storagePath, "history.json"),
+		entries:   make([]HistoryEntry, 0),
+		path:      filepath.Join(storagePath, "history.encrypted"),
+		encryptor: encryptor,
+	}
+
+	// Tenta migrar histórico antigo não criptografado
+	oldPath := filepath.Join(storagePath, "history.json")
+	if _, err := os.Stat(oldPath); err == nil {
+		if err := h.migrateFromUnencrypted(oldPath); err != nil {
+			fmt.Printf("Aviso: erro ao migrar histórico: %v\n", err)
+		}
 	}
 
 	// Carrega histórico existente
@@ -147,9 +165,16 @@ func (h *History) save() error {
 		entriesToSave = entriesToSave[len(entriesToSave)-maxHistorySize:]
 	}
 
-	data, err := json.MarshalIndent(entriesToSave, "", "  ")
+	// Serializa para JSON
+	data, err := json.Marshal(entriesToSave)
 	if err != nil {
 		return fmt.Errorf("erro ao serializar histórico: %w", err)
+	}
+
+	// Criptografa dados
+	encryptedData, err := h.encryptor.Encrypt(data)
+	if err != nil {
+		return fmt.Errorf("erro ao criptografar histórico: %w", err)
 	}
 
 	// Cria diretório se não existir
@@ -158,8 +183,8 @@ func (h *History) save() error {
 		return fmt.Errorf("erro ao criar diretório: %w", err)
 	}
 
-	// Escreve arquivo
-	if err := os.WriteFile(h.path, data, 0600); err != nil {
+	// Escreve arquivo criptografado
+	if err := os.WriteFile(h.path, []byte(encryptedData), 0600); err != nil {
 		return fmt.Errorf("erro ao salvar histórico: %w", err)
 	}
 
@@ -173,18 +198,25 @@ func (h *History) Load() error {
 		return nil // Não é erro se não existir
 	}
 
-	// Valida tamanho (max 10MB)
+	// Valida tamanho (max 20MB criptografado)
 	info, err := os.Stat(h.path)
 	if err != nil {
 		return err
 	}
-	if info.Size() > 10*1024*1024 {
+	if info.Size() > 20*1024*1024 {
 		return fmt.Errorf("arquivo de histórico muito grande")
 	}
 
-	data, err := os.ReadFile(h.path)
+	// Lê arquivo criptografado
+	encryptedData, err := os.ReadFile(h.path)
 	if err != nil {
 		return fmt.Errorf("erro ao ler histórico: %w", err)
+	}
+
+	// Descriptografa
+	data, err := h.encryptor.Decrypt(string(encryptedData))
+	if err != nil {
+		return fmt.Errorf("erro ao descriptografar histórico: %w", err)
 	}
 
 	h.mu.Lock()
@@ -201,6 +233,38 @@ func (h *History) Load() error {
 	}
 
 	h.entries = entries
+	return nil
+}
+
+// migrateFromUnencrypted migra histórico antigo não criptografado
+func (h *History) migrateFromUnencrypted(oldPath string) error {
+	// Lê arquivo antigo
+	data, err := os.ReadFile(oldPath)
+	if err != nil {
+		return fmt.Errorf("erro ao ler histórico antigo: %w", err)
+	}
+
+	// Parse JSON
+	var entries []HistoryEntry
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return fmt.Errorf("erro ao parsear histórico antigo: %w", err)
+	}
+
+	// Salva em formato criptografado
+	h.mu.Lock()
+	h.entries = entries
+	h.mu.Unlock()
+
+	if err := h.Save(); err != nil {
+		return fmt.Errorf("erro ao salvar histórico criptografado: %w", err)
+	}
+
+	// Remove arquivo antigo
+	if err := os.Remove(oldPath); err != nil {
+		fmt.Printf("Aviso: não foi possível remover histórico antigo: %v\n", err)
+	}
+
+	fmt.Println("Histórico migrado com sucesso para formato criptografado")
 	return nil
 }
 

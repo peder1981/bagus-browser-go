@@ -35,11 +35,12 @@ func main() {
 	}
 
 	// Cria e inicia browser
-	browser, err := ui.NewBrowserProduction(userPath, cfg)
+	browser, err := ui.NewBrowser(userPath, cfg)
 	if err != nil {
 		log.Fatalf("Erro ao criar browser: %v", err)
 	}
 
+	log.Println("Iniciando interface do browser...")
 	if err := browser.Run(); err != nil {
 		log.Fatalf("Erro ao executar browser: %v", err)
 	}

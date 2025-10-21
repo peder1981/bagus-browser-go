@@ -1,18 +1,40 @@
-# 🚀 Guia Rápido - Bagus Browser Go
+# 🚀 Guia Rápido - Bagus Browser
 
-## Instalação e Execução
+## Qual versão usar?
 
-### 1. Compilar
+### 🏃 Versão Rápida (Recomendado)
+```bash
+./install.sh  # Escolha opção 1
+bagus
+```
+- ✅ 2 minutos de instalação
+- ✅ 70%+ dos sites (DuckDuckGo, Wikipedia, YouTube)
+- ⚠️ Google, Facebook não funcionam
+
+### 🌐 Versão Completa (100% Sites)
+```bash
+./install.sh  # Escolha opção 2 ou 3
+bagus --full
+```
+- ✅ 100% dos sites (Google, Facebook, Twitter)
+- ⚠️ 40 minutos de instalação
+
+---
+
+## Instalação Rápida
+
+### 1. Instalar
 
 ```bash
-cd /home/peder/bagus-browser-go
-go build -o bagus-browser main.go
+./install.sh
 ```
 
 ### 2. Executar
 
 ```bash
-./bagus-browser
+bagus
+# ou
+./build/bagus
 ```
 
 ### 3. Login

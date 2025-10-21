@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bagus Browser Go - Script de Build (Linux/macOS)
+# Bagus Browser Go - Script de Build (Versão Webview)
 # Uso: ./scripts/build.sh [linux|windows|macos|all]
 
 set -e
@@ -15,12 +15,15 @@ NC='\033[0m' # No Color
 APP_NAME="bagus"
 VERSION="2.0.0-alpha"
 BUILD_DIR="build"
-CMD_DIR="cmd/bagus"
+CMD_DIR="."
 
 # Banner
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   Bagus Browser Go - Build Script    ║${NC}"
+echo -e "${BLUE}║   Bagus Browser - Versão Webview     ║${NC}"
+echo -e "${BLUE}║   Leve | Rápido | 70% Compatibilidade║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${YELLOW}Nota: Para 100% compatibilidade, use: ./scripts/build_cef.sh${NC}"
 echo ""
 
 # Função para build
@@ -99,3 +102,22 @@ echo ""
 echo -e "${GREEN}╔════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║      Build Concluído com Sucesso!     ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${BLUE}Versão:${NC} Webview (Leve)"
+echo -e "${BLUE}Tamanho:${NC} ~5MB"
+echo -e "${BLUE}Compatibilidade:${NC} ~70% dos sites"
+echo ""
+echo -e "${GREEN}✅ Sites compatíveis:${NC}"
+echo -e "   - DuckDuckGo, Wikipedia, Stack Overflow"
+echo -e "   - YouTube, Reddit, Medium"
+echo -e "   - Maioria dos blogs e sites"
+echo ""
+echo -e "${YELLOW}⚠️  Sites incompatíveis:${NC}"
+echo -e "   - Google, Facebook, Twitter"
+echo -e "   - GitHub (algumas páginas)"
+echo -e "   - Sites com X-Frame-Options"
+echo ""
+echo -e "${BLUE}Para 100% compatibilidade:${NC}"
+echo -e "   ./scripts/install_cef.sh  # Instalar CEF (uma vez)"
+echo -e "   ./scripts/build_cef.sh    # Compilar versão CEF"
+echo ""

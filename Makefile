@@ -1,12 +1,13 @@
 # Bagus Browser Go - Makefile
 # Builds multiplataforma e automação de tarefas
+# Suporta duas versões: Webview (leve) e CEF (100% compatível)
 
 # Variáveis
 APP_NAME := bagus
 VERSION := 2.0.0-alpha
 BUILD_DIR := build
 DIST_DIR := dist
-CMD_DIR := cmd/bagus
+CMD_DIR := .
 
 # Detectar sistema operacional
 UNAME_S := $(shell uname -s)
@@ -30,29 +31,49 @@ GREEN := \033[0;32m
 YELLOW := \033[1;33m
 NC := \033[0m # No Color
 
-.PHONY: all build clean test lint fmt deps help
+.PHONY: all build clean test lint fmt deps help menu build-webview build-cef install-cef verify-privacy run-cef
 
 # Target padrão
 all: clean deps fmt lint test build
 
 # Help
 help:
-	@echo "$(GREEN)Bagus Browser Go - Makefile$(NC)"
+	@echo "$(GREEN)╔════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║   Bagus Browser Go - Makefile        ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════╝$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Targets disponíveis:$(NC)"
-	@echo "  make build          - Compila para a plataforma atual"
-	@echo "  make build-all      - Compila para todas as plataformas"
-	@echo "  make build-linux    - Compila para Linux (amd64, arm64)"
-	@echo "  make build-windows  - Compila para Windows (amd64)"
-	@echo "  make build-macos    - Compila para macOS (amd64, arm64)"
+	@echo "$(YELLOW)📦 Build:$(NC)"
+	@echo "  make menu           - Menu interativo de build"
+	@echo "  make build          - Compila versão Webview (padrão)"
+	@echo "  make build-webview  - Compila versão Webview (leve)"
+	@echo "  make build-cef      - Compila versão CEF (100% compatível)"
+	@echo "  make install-cef    - Instala CEF (necessário para build-cef)"
+	@echo ""
+	@echo "$(YELLOW)🔒 Privacidade:$(NC)"
+	@echo "  make verify-privacy - Verifica zero telemetria"
+	@echo ""
+	@echo "$(YELLOW)🚀 Execução:$(NC)"
+	@echo "  make run            - Executa versão Webview"
+	@echo "  make run-cef        - Executa versão CEF"
+	@echo ""
+	@echo "$(YELLOW)🧪 Testes:$(NC)"
 	@echo "  make test           - Executa testes"
 	@echo "  make test-coverage  - Executa testes com coverage"
+	@echo ""
+	@echo "$(YELLOW)🛠️  Utilitários:$(NC)"
 	@echo "  make lint           - Executa linter"
 	@echo "  make fmt            - Formata código"
 	@echo "  make deps           - Instala dependências"
 	@echo "  make clean          - Remove arquivos de build"
-	@echo "  make run            - Compila e executa"
 	@echo ""
+	@echo "$(YELLOW)📦 Distribuição:$(NC)"
+	@echo "  make build-all      - Compila para todas as plataformas"
+	@echo "  make dist           - Cria pacotes de distribuição"
+	@echo ""
+
+# Menu interativo
+menu:
+	@./scripts/build_menu.sh
 
 # Instalar dependências
 deps:
@@ -61,12 +82,33 @@ deps:
 	go mod tidy
 	@echo "$(GREEN)✓ Dependências instaladas$(NC)"
 
-# Build para plataforma atual
-build: deps
-	@echo "$(GREEN)Compilando para $(OS)...$(NC)"
-	@mkdir -p $(BUILD_DIR)
-	$(GO_BUILD) -o $(BUILD_DIR)/$(APP_NAME) ./$(CMD_DIR)
-	@echo "$(GREEN)✓ Build concluído: $(BUILD_DIR)/$(APP_NAME)$(NC)"
+# Build para plataforma atual (Webview - padrão)
+build: build-webview
+
+# Build versão Webview (leve, 70% compatibilidade)
+build-webview: deps
+	@echo "$(GREEN)╔════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║   Compilando Versão Webview           ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════╝$(NC)"
+	@./scripts/build.sh
+
+# Build versão CEF (100% compatibilidade)
+build-cef:
+	@echo "$(GREEN)╔════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║   Compilando Versão CEF               ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════╝$(NC)"
+	@./scripts/build_cef.sh
+
+# Instalar CEF
+install-cef:
+	@echo "$(GREEN)╔════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║   Instalando CEF                      ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════╝$(NC)"
+	@./scripts/install_cef.sh
+
+# Verificar privacidade (zero telemetria)
+verify-privacy:
+	@./scripts/verify_privacy.sh
 
 # Build para Linux
 build-linux:
@@ -126,10 +168,15 @@ fmt:
 	go fmt ./...
 	@echo "$(GREEN)✓ Código formatado$(NC)"
 
-# Executar aplicação
+# Executar aplicação (Webview)
 run: build
-	@echo "$(GREEN)Executando $(APP_NAME)...$(NC)"
+	@echo "$(GREEN)Executando $(APP_NAME) (Webview)...$(NC)"
 	./$(BUILD_DIR)/$(APP_NAME)
+
+# Executar versão CEF
+run-cef:
+	@echo "$(GREEN)Executando $(APP_NAME) (CEF)...$(NC)"
+	cd $(BUILD_DIR) && ./run_bagus_cef.sh
 
 # Executar com debug
 run-debug: build

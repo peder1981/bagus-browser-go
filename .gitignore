@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-bagus
+!bagus-launcher.sh
 bagus-browser
 !bagus-browser.desktop
 !assets/bagus-browser.desktop
