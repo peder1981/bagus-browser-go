@@ -75,18 +75,17 @@ func (c *Coordinator) handleContentMessage(msg ipc.Message) {
 	switch msg.Type {
 	case ipc.MsgURLChanged:
 		if url, ok := msg.Payload.(string); ok {
-			c.controlWindow.UpdateURL(url)
+			log.Printf("URL alterada: %s", url)
 		}
 	case ipc.MsgTitleChanged:
 		if title, ok := msg.Payload.(string); ok {
-			c.controlWindow.UpdateTitle(title)
+			log.Printf("Título: %s", title)
 		}
 	case ipc.MsgLoadingStarted:
-		c.controlWindow.SetLoading(true)
+		log.Printf("Carregando...")
 	case ipc.MsgLoadingFinished:
-		c.controlWindow.SetLoading(false)
+		log.Printf("Carregamento concluído")
 	case ipc.MsgLoadingFailed:
-		c.controlWindow.SetLoading(false)
 		if err, ok := msg.Payload.(error); ok {
 			log.Printf("Erro ao carregar: %v", err)
 		}
