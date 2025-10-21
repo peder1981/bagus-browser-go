@@ -159,11 +159,12 @@ type Tab struct {
 
 // Browser representa o navegador
 type Browser struct {
-	window      *gtk.Window
-	notebook    *gtk.Notebook
-	urlEntry    *gtk.Entry
-	tabs        []*Tab
-	validator   *URLValidator
+	window         *gtk.Window
+	notebook       *gtk.Notebook
+	urlEntry       *gtk.Entry
+	tabs           []*Tab
+	validator      *URLValidator
+	privacyManager *PrivacyManager
 }
 
 func main() {
@@ -208,12 +209,16 @@ func NewBrowser() *Browser {
 	}
 
 	browser := &Browser{
-		window:    win,
-		notebook:  notebook,
-		urlEntry:  urlEntry,
-		tabs:      make([]*Tab, 0),
-		validator: NewURLValidator(),
+		window:         win,
+		notebook:       notebook,
+		urlEntry:       urlEntry,
+		tabs:           make([]*Tab, 0),
+		validator:      NewURLValidator(),
+		privacyManager: NewPrivacyManager(),
 	}
+	
+	// Logar informações de privacidade
+	browser.privacyManager.LogPrivacyInfo()
 
 	// Criar toolbar
 	toolbar := browser.createToolbar()
@@ -355,6 +360,9 @@ func (b *Browser) NewTab(url string) {
 		log.Printf("❌ Erro ao criar WebView: %v", err)
 		return
 	}
+	
+	// Aplicar configurações de privacidade
+	ApplyPrivacyConfig(webView, b.privacyManager.GetConfig())
 
 	// Criar container scrollable
 	scrolled, err := gtk.ScrolledWindowNew(nil, nil)
