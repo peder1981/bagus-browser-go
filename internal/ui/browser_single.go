@@ -233,12 +233,16 @@ func (b *BrowserSingleWindow) generateHTML() string {
             }
         }
 
-        function handleUrlInput(event) {
+        async function handleUrlInput(event) {
             if (event.key === 'Enter') {
                 var input = event.target.value.trim();
                 if (input && window.navigateGo) {
-                    var url = navigateGo(input);
-                    if (url) navigate(url);
+                    try {
+                        var url = await navigateGo(input);
+                        if (url) navigate(url);
+                    } catch (e) {
+                        console.error('Erro ao navegar:', e);
+                    }
                 }
             }
         }
