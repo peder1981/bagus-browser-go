@@ -28,7 +28,8 @@ usage() {
 
 # Função para obter versão atual
 get_current_version() {
-    git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "4.3.0"
+    # Pegar a tag mais recente (ordenada por versão)
+    git tag -l 'v*' | sort -V | tail -1 | sed 's/^v//' || echo "4.4.0"
 }
 
 # Função para atualizar CHANGELOG

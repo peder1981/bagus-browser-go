@@ -1,15 +1,18 @@
-.PHONY: help build release publish clean install test
+.PHONY: help build release publish clean install test version
 
 help:
 	@echo "Bagus Browser - Makefile"
 	@echo ""
 	@echo "Comandos disponíveis:"
 	@echo "  make build     - Compilar e empacotar"
-	@echo "  make release   - Criar release no GitHub"
-	@echo "  make publish   - Build + Release completo"
+	@echo "  make release   - Criar release completa (recomendado)"
+	@echo "  make version   - Ver versão atual"
 	@echo "  make clean     - Limpar builds"
-	@echo "  make install   - Instalar localmente"
+	@echo "  make install   - Build + Instalar localmente"
 	@echo "  make test      - Testar compilação"
+	@echo ""
+	@echo "Novo workflow (recomendado):"
+	@echo "  make release VERSION=4.5.0  - Cria release completa"
 	@echo ""
 
 build:
@@ -17,8 +20,18 @@ build:
 	@./scripts/build.sh
 
 release:
-	@chmod +x scripts/release.sh
-	@./scripts/release.sh
+	@chmod +x scripts/version.sh
+ifdef VERSION
+	@./scripts/version.sh release $(VERSION)
+else
+	@echo "❌ Erro: Especifique a versão"
+	@echo "Uso: make release VERSION=4.5.0"
+	@exit 1
+endif
+
+version:
+	@chmod +x scripts/version.sh
+	@./scripts/version.sh current
 
 publish:
 	@chmod +x scripts/publish.sh
@@ -27,14 +40,17 @@ publish:
 clean:
 	@echo "🗑️  Limpando..."
 	@rm -rf build/ dist/
-	@rm -f bagus-browser
+	@rm -f bagus-browser *.log
 	@echo "✅ Limpo!"
 
 install: build
 	@echo "📦 Instalando..."
-	@sudo cp build/bagus-browser /usr/local/bin/
-	@sudo cp build/bagus-browser.desktop /usr/share/applications/
-	@echo "✅ Instalado em /usr/local/bin/bagus-browser"
+	@sudo dpkg -i dist/bagus-browser_*.deb || sudo apt-get install -f
+	@echo "✅ Instalado!"
+	@echo ""
+	@echo "🧹 Limpando temporários..."
+	@rm -rf build/
+	@echo "✅ Limpeza concluída!"
 
 test:
 	@echo "🧪 Testando compilação..."
