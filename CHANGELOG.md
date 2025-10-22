@@ -66,6 +66,39 @@ Primeira versão de produção do Bagus Browser com todos os 4 pilares implement
 
 ---
 
+## [4.3.0] - 2025-10-22
+
+### 🐛 Correções Críticas
+
+#### Favoritos Criptografados - CORRIGIDO
+- **Problema:** Favoritos não carregavam entre sessões
+- **Causa:** Chave de criptografia era gerada aleatoriamente a cada execução
+- **Solução:** Chave derivada de hostname + username (persistente)
+- ✅ Favoritos agora carregam corretamente ao reabrir browser
+- ✅ Persistência entre sessões garantida
+- ✅ Segurança mantida (AES-256-GCM + PBKDF2)
+
+### ⌨️ Navegação Entre Abas
+
+#### Novos Atalhos (11 adicionados)
+- **Ctrl+Tab** - Próxima aba (circular)
+- **Ctrl+Shift+Tab** - Aba anterior (circular)
+- **Ctrl+1 a Ctrl+9** - Ir direto para aba específica (9 atalhos)
+
+#### Funcionalidades
+- ✅ Navegação circular entre abas
+- ✅ Atualização automática da URL entry
+- ✅ Funções NextTab(), PreviousTab(), GoToTab()
+- ✅ Validação de índices
+- ✅ Logs informativos
+
+### 📊 Estatísticas
+- **Atalhos:** 27 (antes: 16)
+- **Funções novas:** 3
+- **Linhas adicionadas:** ~80
+
+---
+
 ## [4.2.0] - 2025-10-21
 
 ### 🎨 Melhorias de UX
