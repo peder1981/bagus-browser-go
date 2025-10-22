@@ -57,7 +57,8 @@ Browser minimalista, seguro e privado construído em Go.
 - 📅 Gerenciador de downloads
 - 🔍 Zoom (Ctrl++, Ctrl+-, Ctrl+0)
 - 🎯 Foco automático na barra de URL ao abrir nova aba
-- ⌨️  16 atalhos de teclado
+- ⌨️  27 atalhos de teclado
+- 🔄 Navegação entre abas (Ctrl+Tab, Ctrl+1-9)
 
 ### 🔒 Segurança
 
@@ -77,7 +78,7 @@ Browser minimalista, seguro e privado construído em Go.
 ### 📊 Estatísticas
 
 - **Tamanho:** 6.4MB
-- **Atalhos:** 16
+- **Atalhos:** 27
 - **Plataforma:** Linux only
 - **Licença:** MIT
 
