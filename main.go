@@ -24,6 +24,10 @@ static void configure_webview_security(WebKitWebView* webview) {
     // Habilitar proteções
     webkit_settings_set_enable_dns_prefetching(settings, FALSE);
     webkit_settings_set_enable_page_cache(settings, FALSE);
+    
+    // Habilitar recursos de edição (necessário para paste de imagens)
+    webkit_settings_set_enable_write_console_messages_to_stdout(settings, TRUE);
+    webkit_settings_set_javascript_can_access_clipboard(settings, TRUE);
 }
 
 static WebKitWebView* create_webview() {
@@ -585,24 +589,24 @@ func (b *Browser) setupKeyboardShortcuts() {
 		altPressed := (state & uint(gdk.MOD1_MASK)) != 0
 		shiftPressed := (state & uint(gdk.SHIFT_MASK)) != 0
 
+		// Ctrl+Shift+T - Reabrir última aba fechada (ANTES de Ctrl+T)
+		if ctrlPressed && shiftPressed && (keyVal == gdk.KEY_t || keyVal == gdk.KEY_T) {
+			log.Println("⌨️  Ctrl+Shift+T - Reabrir última aba fechada")
+			b.ReopenClosedTab()
+			return true
+		}
+
 		// Ctrl+T - Nova aba
-		if ctrlPressed && keyVal == gdk.KEY_t {
+		if ctrlPressed && !shiftPressed && (keyVal == gdk.KEY_t || keyVal == gdk.KEY_T) {
 			log.Println("⌨️  Ctrl+T - Nova aba")
 			b.NewTab("https://duckduckgo.com")
 			return true
 		}
 
 		// Ctrl+W - Fechar aba
-		if ctrlPressed && keyVal == gdk.KEY_w {
+		if ctrlPressed && (keyVal == gdk.KEY_w || keyVal == gdk.KEY_W) {
 			log.Println("⌨️  Ctrl+W - Fechar aba")
 			b.CloseCurrentTab()
-			return true
-		}
-
-		// Ctrl+Shift+T - Reabrir última aba fechada
-		if ctrlPressed && shiftPressed && keyVal == gdk.KEY_t {
-			log.Println("⌨️  Ctrl+Shift+T - Reabrir última aba fechada")
-			b.ReopenClosedTab()
 			return true
 		}
 
@@ -842,11 +846,26 @@ func (b *Browser) NewTab(url string) {
 
 	b.window.ShowAll()
 	
-	// Focar na barra de URL após criar aba (usar IdleAdd para garantir que a aba seja mostrada primeiro)
+	// Garantir que a aba seja mostrada antes de focar
+	b.notebook.SetCurrentPage(pageNum)
+	
+	// Focar na barra de URL com múltiplas tentativas
 	glib.IdleAdd(func() bool {
-		b.urlEntry.GrabFocus()
-		b.urlEntry.SelectRegion(0, -1)
-		return false // Executar apenas uma vez
+		// Garantir que a aba está visível
+		if b.notebook.GetCurrentPage() == pageNum {
+			b.urlEntry.GrabFocus()
+			b.urlEntry.SelectRegion(0, -1)
+		}
+		return false
+	})
+	
+	// Timeout adicional para garantir foco (50ms)
+	glib.TimeoutAdd(50, func() bool {
+		if b.notebook.GetCurrentPage() == pageNum {
+			b.urlEntry.GrabFocus()
+			b.urlEntry.SelectRegion(0, -1)
+		}
+		return false
 	})
 
 	log.Printf("✅ Aba %d criada - Carregando: %s", tabIndex+1, url)
