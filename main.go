@@ -101,8 +101,16 @@ static void find_finish(WebKitWebView* webview) {
     webkit_find_controller_search_finish(controller);
 }
 
-// Função para conectar sinal de download (será chamada do Go)
-// O handler real será implementado em Go
+// Funções para downloads e impressão
+static void* get_download_context(WebKitWebView* webview) {
+    WebKitWebContext* context = webkit_web_view_get_context(webview);
+    return (void*)context;
+}
+
+static void start_print_operation(WebKitWebView* webview) {
+    WebKitPrintOperation* print_op = webkit_print_operation_new(webview);
+    webkit_print_operation_run_dialog(print_op, NULL);
+}
 */
 import "C"
 import (
@@ -250,6 +258,11 @@ func (w *WebView) FindFinish() {
 	C.find_finish(w.cWebView)
 }
 
+// Print inicia operação de impressão
+func (w *WebView) Print() {
+	C.start_print_operation(w.cWebView)
+}
+
 // Tab representa uma aba com WebView e label
 type Tab struct {
 	webView *WebView
@@ -266,6 +279,7 @@ type Browser struct {
 	privacyManager  *PrivacyManager
 	bookmarkManager *BookmarkManager
 	downloadManager *DownloadManager
+	sessionManager  *SessionManager
 	findBar         *gtk.Box
 	findEntry       *gtk.Entry
 	findBarVisible  bool
@@ -337,6 +351,12 @@ func NewBrowser() *Browser {
 		log.Printf("📁 Downloads: %s", downloadManager.GetDownloadPath())
 	}
 	
+	// Criar SessionManager
+	sessionManager, err := NewSessionManager(crypto)
+	if err != nil {
+		log.Printf("⚠️  Erro ao criar session manager: %v", err)
+	}
+	
 	browser := &Browser{
 		window:          win,
 		notebook:        notebook,
@@ -346,6 +366,7 @@ func NewBrowser() *Browser {
 		privacyManager:  NewPrivacyManager(),
 		bookmarkManager: bookmarkManager,
 		downloadManager: downloadManager,
+		sessionManager:  sessionManager,
 	}
 	
 	// Logar informações de privacidade
@@ -368,8 +389,14 @@ func NewBrowser() *Browser {
 	// Conectar atalhos
 	browser.setupKeyboardShortcuts()
 
-	// Criar primeira aba
-	browser.NewTab("https://duckduckgo.com")
+	// Restaurar sessão ou criar primeira aba
+	browser.restoreSession()
+	
+	// Conectar sinal de fechamento para salvar sessão
+	win.Connect("destroy", func() {
+		browser.saveSession()
+		gtk.MainQuit()
+	})
 
 	return browser
 }
@@ -656,6 +683,13 @@ func (b *Browser) setupKeyboardShortcuts() {
 			return true
 		}
 
+		// Ctrl+P - Imprimir
+		if ctrlPressed && keyVal == gdk.KEY_p {
+			log.Println("⌨️  Ctrl+P - Imprimir")
+			b.Print()
+			return true
+		}
+
 		// Ctrl+Shift+B - Gerenciar favoritos
 		if ctrlPressed && shiftPressed && (keyVal == gdk.KEY_b || keyVal == gdk.KEY_B) {
 			log.Println("⌨️  Ctrl+Shift+B - Gerenciar favoritos")
@@ -692,6 +726,20 @@ func (b *Browser) setupKeyboardShortcuts() {
 			return true
 		}
 
+		// Ctrl+Ins - Copiar (alternativo)
+		if ctrlPressed && keyVal == gdk.KEY_Insert {
+			log.Println("⌨️  Ctrl+Ins - Copiar")
+			// WebKit trata automaticamente
+			return false // Deixar WebKit processar
+		}
+
+		// Shift+Ins - Colar (alternativo)
+		if shiftPressed && keyVal == gdk.KEY_Insert {
+			log.Println("⌨️  Shift+Ins - Colar")
+			// WebKit trata automaticamente
+			return false // Deixar WebKit processar
+		}
+
 		return false
 	})
 }
@@ -709,6 +757,9 @@ func (b *Browser) NewTab(url string) {
 	
 	// Aplicar configurações de privacidade
 	ApplyPrivacyConfig(webView, b.privacyManager.GetConfig())
+
+	// Conectar handler de downloads
+	b.setupDownloadHandler(webView)
 
 	// Criar container scrollable
 	scrolled, err := gtk.ScrolledWindowNew(nil, nil)
@@ -776,9 +827,12 @@ func (b *Browser) NewTab(url string) {
 
 	b.window.ShowAll()
 	
-	// Focar na barra de URL após criar aba
-	b.urlEntry.GrabFocus()
-	b.urlEntry.SelectRegion(0, -1)
+	// Focar na barra de URL após criar aba (usar IdleAdd para garantir que a aba seja mostrada primeiro)
+	glib.IdleAdd(func() bool {
+		b.urlEntry.GrabFocus()
+		b.urlEntry.SelectRegion(0, -1)
+		return false // Executar apenas uma vez
+	})
 
 	log.Printf("✅ Aba %d criada - Carregando: %s", tabIndex+1, url)
 }
@@ -976,6 +1030,31 @@ func (b *Browser) FindPrevious() {
 	}
 }
 
+// setupDownloadHandler configura o handler de downloads para um WebView
+func (b *Browser) setupDownloadHandler(webView *WebView) {
+	if b.downloadManager == nil {
+		return
+	}
+	
+	// Conectar sinal "download-started"
+	webView.widget.Connect("download-started", func(wv *gtk.Widget, download interface{}) {
+		log.Println("📥 Download iniciado!")
+		
+		// TODO: Implementar lógica de download completa
+		// Por enquanto, apenas logar
+		// O WebKit2GTK automaticamente baixa para a pasta padrão
+	})
+}
+
+// Print imprime a página atual
+func (b *Browser) Print() {
+	webView := b.getCurrentWebView()
+	if webView != nil {
+		log.Println("🖨️  Abrindo diálogo de impressão...")
+		webView.Print()
+	}
+}
+
 // AddBookmark adiciona página atual aos favoritos
 func (b *Browser) AddBookmark() {
 	if b.bookmarkManager == nil {
@@ -1164,6 +1243,65 @@ func (b *Browser) GoToTab(tabNum int) {
 	}
 	
 	log.Printf("📑 Aba %d/%d", tabNum+1, nPages)
+}
+
+// saveSession salva a sessão atual
+func (b *Browser) saveSession() {
+	if b.sessionManager == nil {
+		return
+	}
+	
+	var tabs []SessionTab
+	currentPage := b.notebook.GetCurrentPage()
+	
+	for i, tab := range b.tabs {
+		if tab.webView != nil {
+			uri := tab.webView.GetURI()
+			title := tab.webView.GetTitle()
+			
+			// Não salvar abas vazias ou about:blank
+			if uri != "" && uri != "about:blank" {
+				tabs = append(tabs, SessionTab{
+					URL:    uri,
+					Title:  title,
+					Active: i == currentPage,
+				})
+			}
+		}
+	}
+	
+	if err := b.sessionManager.Save(tabs); err != nil {
+		log.Printf("❌ Erro ao salvar sessão: %v", err)
+	}
+}
+
+// restoreSession restaura a sessão salva
+func (b *Browser) restoreSession() {
+	if b.sessionManager == nil {
+		// Criar aba padrão
+		b.NewTab("https://duckduckgo.com")
+		return
+	}
+	
+	session, err := b.sessionManager.Load()
+	if err != nil {
+		log.Printf("⚠️  Erro ao carregar sessão: %v", err)
+		// Criar aba padrão
+		b.NewTab("https://duckduckgo.com")
+		return
+	}
+	
+	if len(session.Tabs) == 0 {
+		// Nenhuma aba salva, criar aba padrão
+		b.NewTab("https://duckduckgo.com")
+		return
+	}
+	
+	// Restaurar abas
+	log.Printf("📂 Restaurando %d abas...", len(session.Tabs))
+	for _, tab := range session.Tabs {
+		b.NewTab(tab.URL)
+	}
 }
 
 // Show mostra a janela
