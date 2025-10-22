@@ -42,7 +42,7 @@ bagus-browser
 - [ ] Texto está selecionado (azul)
 
 **Resultado Atual:**
-- [ ] ✅ Funcionou
+- [X] ✅ Funcionou
 - [ ] ❌ Não funcionou - Descrever: _________________
 
 **Logs Esperados:**
@@ -74,7 +74,7 @@ bagus-browser
 - [ ] Aba 3 (duckduckgo.com) reabre
 
 **Resultado Atual:**
-- [ ] ✅ Funcionou
+- [X] ✅ Funcionou
 - [ ] ❌ Não funcionou - Descrever: _________________
 
 **Logs Esperados:**
@@ -110,9 +110,11 @@ bagus-browser
 - [ ] ❌ Não funcionou em nenhum site
 
 **Sites para Testar:**
-- [ ] Gmail (https://mail.google.com)
-- [ ] Google Docs (https://docs.google.com)
-- [ ] WhatsApp Web (https://web.whatsapp.com)
+- [ ] Gmail (https://mail.google.com) - ✅ Funciona
+- [ ] Google Docs (https://docs.google.com) - ✅ Funciona
+- [ ] Slack (https://slack.com) - ✅ Funciona
+- [ ] Telegram Web (https://web.telegram.org) - ✅ Funciona
+- [ ] WhatsApp Web (https://web.whatsapp.com) - ❌ NÃO funciona (limitação da API)
 
 ---
 

@@ -589,12 +589,6 @@ func (b *Browser) setupKeyboardShortcuts() {
 		altPressed := (state & uint(gdk.MOD1_MASK)) != 0
 		shiftPressed := (state & uint(gdk.SHIFT_MASK)) != 0
 
-		// DEBUG: Log teclas T/t com modificadores
-		if keyVal == gdk.KEY_t || keyVal == gdk.KEY_T {
-			log.Printf("🔍 DEBUG: keyVal=%d (t=%d, T=%d), Ctrl=%v, Shift=%v", 
-				keyVal, gdk.KEY_t, gdk.KEY_T, ctrlPressed, shiftPressed)
-		}
-
 		// Ctrl+Shift+T - Reabrir última aba fechada (ANTES de Ctrl+T)
 		if ctrlPressed && shiftPressed && (keyVal == gdk.KEY_t || keyVal == gdk.KEY_T) {
 			log.Println("⌨️  Ctrl+Shift+T - Reabrir última aba fechada")
