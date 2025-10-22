@@ -670,6 +670,28 @@ func (b *Browser) setupKeyboardShortcuts() {
 			return true
 		}
 
+		// Ctrl+Tab - Próxima aba
+		if ctrlPressed && keyVal == gdk.KEY_Tab && !shiftPressed {
+			log.Println("⌨️  Ctrl+Tab - Próxima aba")
+			b.NextTab()
+			return true
+		}
+
+		// Ctrl+Shift+Tab - Aba anterior
+		if ctrlPressed && shiftPressed && keyVal == gdk.KEY_ISO_Left_Tab {
+			log.Println("⌨️  Ctrl+Shift+Tab - Aba anterior")
+			b.PreviousTab()
+			return true
+		}
+
+		// Ctrl+1 a Ctrl+9 - Ir para aba específica
+		if ctrlPressed && keyVal >= gdk.KEY_1 && keyVal <= gdk.KEY_9 {
+			tabNum := int(keyVal - gdk.KEY_1)
+			log.Printf("⌨️  Ctrl+%d - Ir para aba %d", tabNum+1, tabNum+1)
+			b.GoToTab(tabNum)
+			return true
+		}
+
 		return false
 	})
 }
@@ -1061,6 +1083,87 @@ func (b *Browser) ShowBookmarks() {
 	dialog.ShowAll()
 	dialog.Run()
 	dialog.Destroy()
+}
+
+// NextTab vai para a próxima aba
+func (b *Browser) NextTab() {
+	currentPage := b.notebook.GetCurrentPage()
+	nPages := b.notebook.GetNPages()
+	
+	if nPages <= 1 {
+		return
+	}
+	
+	nextPage := (currentPage + 1) % nPages
+	b.notebook.SetCurrentPage(nextPage)
+	
+	// Atualizar URL entry
+	if nextPage < len(b.tabs) {
+		webView := b.tabs[nextPage].webView
+		if webView != nil {
+			uri := webView.GetURI()
+			if uri != "" {
+				b.urlEntry.SetText(uri)
+			}
+		}
+	}
+	
+	log.Printf("📑 Aba %d/%d", nextPage+1, nPages)
+}
+
+// PreviousTab vai para a aba anterior
+func (b *Browser) PreviousTab() {
+	currentPage := b.notebook.GetCurrentPage()
+	nPages := b.notebook.GetNPages()
+	
+	if nPages <= 1 {
+		return
+	}
+	
+	prevPage := currentPage - 1
+	if prevPage < 0 {
+		prevPage = nPages - 1
+	}
+	
+	b.notebook.SetCurrentPage(prevPage)
+	
+	// Atualizar URL entry
+	if prevPage < len(b.tabs) {
+		webView := b.tabs[prevPage].webView
+		if webView != nil {
+			uri := webView.GetURI()
+			if uri != "" {
+				b.urlEntry.SetText(uri)
+			}
+		}
+	}
+	
+	log.Printf("📑 Aba %d/%d", prevPage+1, nPages)
+}
+
+// GoToTab vai para uma aba específica (0-indexed)
+func (b *Browser) GoToTab(tabNum int) {
+	nPages := b.notebook.GetNPages()
+	
+	if tabNum < 0 || tabNum >= nPages {
+		log.Printf("⚠️  Aba %d não existe (total: %d)", tabNum+1, nPages)
+		return
+	}
+	
+	b.notebook.SetCurrentPage(tabNum)
+	
+	// Atualizar URL entry
+	if tabNum < len(b.tabs) {
+		webView := b.tabs[tabNum].webView
+		if webView != nil {
+			uri := webView.GetURI()
+			if uri != "" {
+				b.urlEntry.SetText(uri)
+			}
+		}
+	}
+	
+	log.Printf("📑 Aba %d/%d", tabNum+1, nPages)
 }
 
 // Show mostra a janela

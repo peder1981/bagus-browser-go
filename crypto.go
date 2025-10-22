@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
+	"os"
 	
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -18,19 +19,27 @@ type CryptoManager struct {
 }
 
 // NewCryptoManager cria um novo gerenciador de criptografia
-// Se masterPassword for vazio, gera uma chave aleatória
+// Se masterPassword for vazio, usa uma chave derivada do hostname
 func NewCryptoManager(masterPassword string) (*CryptoManager, error) {
 	var key []byte
 	
 	if masterPassword == "" {
-		// Gerar chave aleatória para esta sessão
-		key = make([]byte, 32)
-		if _, err := rand.Read(key); err != nil {
-			return nil, err
+		// Usar chave derivada do hostname + username para persistência
+		// Isso garante que a mesma chave seja usada em todas as sessões
+		hostname, _ := os.Hostname()
+		username := os.Getenv("USER")
+		if username == "" {
+			username = os.Getenv("USERNAME") // Windows
 		}
+		
+		// Criar senha mestre baseada no sistema
+		systemKey := hostname + "-" + username + "-bagus-browser-v1"
+		
+		// Derivar chave usando PBKDF2
+		salt := []byte("bagus-browser-salt-v1")
+		key = pbkdf2.Key([]byte(systemKey), salt, 100000, 32, sha256.New)
 	} else {
 		// Derivar chave da senha mestre usando PBKDF2
-		// Salt fixo por instalação (em produção, deveria ser único e armazenado)
 		salt := []byte("bagus-browser-salt-v1")
 		key = pbkdf2.Key([]byte(masterPassword), salt, 100000, 32, sha256.New)
 	}

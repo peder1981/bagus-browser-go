@@ -1,4 +1,4 @@
-# 🌐 Bagus Browser v4.1
+﻿# 🌐 Bagus Browser v4.1
 
 **Browser minimalista, seguro e privado construído em Go**
 
