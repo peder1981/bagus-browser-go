@@ -1,12 +1,29 @@
 # 🔐 Usando Gerenciadores de Senha com Bagus Browser
 
+## ⚠️ IMPORTANTE: Extensões NÃO Funcionam
+
+O Bagus Browser **NÃO suporta extensões** por design (segurança e privacidade).
+
+**Isso significa:**
+- ❌ Extensão do Proton Pass NÃO funciona
+- ❌ Extensão do Bitwarden NÃO funciona
+- ❌ Extensão do 1Password NÃO funciona
+- ❌ Auto-fill via extensão NÃO funciona
+
+**Mas você PODE usar:**
+- ✅ App desktop do gerenciador
+- ✅ Copiar e colar (Ctrl+C / Ctrl+V)
+- ✅ Auto-type (KeePassXC)
+
+---
+
 ## 📋 Compatibilidade
 
 O Bagus Browser é compatível com gerenciadores de senha que funcionam através de:
 
-1. **Preenchimento automático nativo do sistema**
+1. **App Desktop** (não extensão!)
 2. **Copiar e colar (Ctrl+C / Ctrl+V)**
-3. **Atalhos alternativos (Ctrl+Ins / Shift+Ins)**
+3. **Auto-type global (KeePassXC)**
 
 ---
 
@@ -16,17 +33,39 @@ O Bagus Browser é compatível com gerenciadores de senha que funcionam através
 
 **Status:** ✅ Compatível (via clipboard)
 
-**Como usar:**
-1. Instale a extensão Proton Pass no navegador principal (Chrome/Firefox)
-2. Ou use o app desktop Proton Pass
-3. Copie a senha do Proton Pass (Ctrl+C)
-4. Cole no Bagus Browser (Ctrl+V ou Shift+Ins)
+**⚠️ ATENÇÃO:** Use o **app desktop**, NÃO a extensão!
+
+**Workflow Correto:**
+
+#### Opção 1: App Desktop Proton Pass (Recomendado)
+```
+1. Instalar app desktop Proton Pass
+   Download: https://proton.me/pass/download
+
+2. Abrir Proton Pass desktop
+3. Buscar credencial
+4. Clicar em "Copy username" ou "Copy password"
+5. Voltar ao Bagus Browser
+6. Clicar no campo de login/senha
+7. Ctrl+V (colar)
+```
+
+#### Opção 2: Extensão em Outro Navegador
+```
+1. Manter Chrome/Firefox aberto com Proton Pass
+2. No Bagus Browser, abrir site de login
+3. Alt+Tab para Chrome/Firefox
+4. Abrir Proton Pass (extensão)
+5. Copiar senha (Ctrl+C)
+6. Alt+Tab para Bagus Browser
+7. Ctrl+V no campo
+```
 
 **Vantagens:**
-- ✅ Segurança mantida
-- ✅ Sem armazenamento local de senhas
-- ✅ Criptografia E2E do Proton Pass
-- ✅ Workflow simples
+- ✅ Segurança mantida (E2E)
+- ✅ Sem armazenamento local
+- ✅ Workflow simples (2-3 cliques)
+- ✅ Funciona com qualquer site
 
 ---
 
@@ -42,36 +81,83 @@ O Bagus Browser é compatível com gerenciadores de senha que funcionam através
 - ✅ App desktop disponível
 - ✅ Atalho global Ctrl+Shift+L para auto-fill
 
-#### KeePassXC
+#### KeePassXC ⭐ RECOMENDADO
+
+**Status:** ✅ Melhor compatibilidade (auto-type)
+
+**Por que é o melhor:**
+- ✅ Auto-type funciona PERFEITAMENTE
+- ✅ Atalho global (Ctrl+Alt+A)
+- ✅ Preenche usuário E senha automaticamente
+- ✅ Não precisa copiar/colar
+- ✅ Open source e gratuito
+
+**Workflow:**
+```
+1. Instalar KeePassXC
+   sudo apt install keepassxc
+
+2. Configurar auto-type:
+   - Tools > Settings > Browser Integration
+   - Enable "Auto-Type"
+   - Configure shortcut: Ctrl+Alt+A
+
+3. Usar:
+   - Abrir site de login no Bagus Browser
+   - Clicar no campo de usuário
+   - Pressionar Ctrl+Alt+A
+   - Selecionar credencial
+   - KeePassXC preenche tudo automaticamente!
+```
+
+#### Bitwarden
 - ✅ Compatível via clipboard
-- ✅ Auto-type disponível
-- ✅ Atalho global Ctrl+Alt+A para auto-type
+- ✅ App desktop disponível
+- ⚠️ Auto-fill NÃO funciona (precisa extensão)
 
 #### LastPass
 - ✅ Compatível via clipboard
 - ✅ App desktop disponível
+- ⚠️ Auto-fill NÃO funciona (precisa extensão)
 
 ---
 
 ## 🎯 Workflow Recomendado
 
-### Opção 1: Clipboard (Mais Seguro)
+### Opção 1: KeePassXC Auto-Type (MELHOR) ⭐
 
-1. Abra seu gerenciador de senha
-2. Busque a credencial desejada
-3. Copie o usuário/senha
-4. Cole no Bagus Browser
+**Não precisa copiar/colar!**
+
+```
+1. Abrir site de login no Bagus Browser
+2. Clicar no campo de usuário
+3. Pressionar Ctrl+Alt+A
+4. Selecionar credencial no KeePassXC
+5. Pronto! Usuário e senha preenchidos automaticamente
+```
+
+**Vantagens:**
+- ✅ Mais rápido (1 atalho)
+- ✅ Mais seguro (não usa clipboard)
+- ✅ Funciona em qualquer site
+- ✅ Preenche múltiplos campos
+
+---
+
+### Opção 2: Clipboard (Proton Pass, Bitwarden, etc)
+
+```
+1. Abrir app desktop do gerenciador
+2. Buscar credencial
+3. Copiar usuário (Ctrl+C)
+4. Voltar ao Bagus Browser
+5. Colar no campo (Ctrl+V)
+6. Repetir para senha
+```
 
 **Atalhos:**
 - Copiar: `Ctrl+C` ou `Ctrl+Ins`
 - Colar: `Ctrl+V` ou `Shift+Ins`
-
-### Opção 2: Auto-Type (KeePassXC)
-
-1. Configure auto-type no KeePassXC
-2. Foque no campo de login
-3. Pressione `Ctrl+Alt+A`
-4. KeePassXC preenche automaticamente
 
 ---
 
