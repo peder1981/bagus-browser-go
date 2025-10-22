@@ -66,6 +66,67 @@ Primeira versão de produção do Bagus Browser com todos os 4 pilares implement
 
 ---
 
+## [4.4.0] - 2025-10-22
+
+### ✨ Novas Funcionalidades
+
+#### Impressão (Ctrl+P)
+- ✅ Diálogo nativo de impressão
+- ✅ Imprimir para PDF
+- ✅ Imprimir para impressoras físicas
+- ✅ WebKit2GTK PrintOperation
+
+#### Restauração de Sessão
+- ✅ Salva todas as abas ao fechar
+- ✅ Restaura abas ao reabrir
+- ✅ Arquivo criptografado: `~/.config/bagus-browser/session.enc`
+- ✅ AES-256-GCM + PBKDF2
+
+#### Ctrl+Shift+T - Reabrir Abas Fechadas
+- ✅ Histórico de até 10 abas fechadas
+- ✅ LIFO (Last In, First Out)
+- ✅ Não salva abas vazias
+
+#### Downloads
+- ✅ Handler de downloads conectado
+- ✅ Downloads automáticos para ~/Downloads
+- ✅ Logs informativos
+
+#### Notificações Web
+- ✅ Habilitadas por padrão
+- ✅ Controladas por site
+- ✅ Permissões gerenciadas pelo WebKit
+
+#### Copiar/Colar Avançado
+- ✅ Ctrl+Ins - Copiar (alternativo)
+- ✅ Shift+Ins - Colar (alternativo)
+- ✅ Suporte a imagens e HTML
+
+### 🐛 Correções
+
+#### Ctrl+T Melhorado
+- ✅ Foco imediato na nova aba (glib.IdleAdd)
+- ✅ Cursor na barra de URL garantido
+
+### 📚 Documentação
+
+#### Gerenciadores de Senha
+- ✅ Guia completo: `docs/GERENCIADORES_SENHA.md`
+- ✅ Compatibilidade: Proton Pass, KeePassXC, Bitwarden, 1Password
+- ✅ Workflows e exemplos
+
+#### Análise Técnica
+- ✅ `docs/development/MELHORIAS_v4.4.0.md`
+- ✅ Detalhes de implementação
+- ✅ Testes e validações
+
+### 📊 Estatísticas
+- **Atalhos:** 30 (antes: 27)
+- **Arquivos novos:** 2 (session.go, docs/GERENCIADORES_SENHA.md)
+- **Linhas adicionadas:** ~850
+
+---
+
 ## [4.3.0] - 2025-10-22
 
 ### 🐛 Correções Críticas
