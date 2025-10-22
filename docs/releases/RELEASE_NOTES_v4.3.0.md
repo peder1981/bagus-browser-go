@@ -1,4 +1,4 @@
-﻿# Bagus Browser v4.3.0
+# Bagus Browser v4.3.0
 
 ## 🎉 Release
 
