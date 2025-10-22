@@ -33,21 +33,19 @@ if [ -n "$COMMIT_MSG" ]; then
 fi
 echo ""
 
-# 3. Release
-echo -e "${BLUE}[3/3] 🚀 Creating GitHub release...${NC}"
+# 3. Preparar Release
+echo -e "${BLUE}[3/3] 🚀 Preparando release...${NC}"
 bash scripts/release.sh
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Release failed${NC}"
-    exit 1
-fi
 
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║  ✅ PUBLISH COMPLETE!                  ║${NC}"
+echo -e "${GREEN}║  ✅ BUILD & COMMIT COMPLETE!           ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${BLUE}Next steps:${NC}"
-echo -e "  1. Check release: https://github.com/peder1981/bagus-browser-go/releases"
-echo -e "  2. Test installation"
-echo -e "  3. Share with users!"
+echo -e "${YELLOW}📋 Próximos passos:${NC}"
+echo -e "  1. ${BLUE}Publicar release manualmente no GitHub${NC}"
+echo -e "     ${GREEN}https://github.com/peder1981/bagus-browser-go/releases/new${NC}"
+echo -e "  2. ${BLUE}Fazer upload dos arquivos de dist/${NC}"
+echo -e "  3. ${BLUE}Testar instalação${NC}"
+echo -e "  4. ${BLUE}Compartilhar com usuários!${NC}"
 echo ""

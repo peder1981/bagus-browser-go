@@ -12,36 +12,8 @@ echo -e "${BLUE}🚀 Bagus Browser - GitHub Release Script${NC}"
 echo -e "${BLUE}=========================================${NC}"
 echo ""
 
-# Obter token usando sistema OAuth2 com cache
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "${SCRIPT_DIR}/scripts/github-auth.sh" ]; then
-    GITHUB_TOKEN=$(bash "${SCRIPT_DIR}/scripts/github-auth.sh" get)
-    
-    if [ -z "$GITHUB_TOKEN" ]; then
-        echo -e "${RED}❌ Falha ao obter token do GitHub${NC}"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}✅ Token obtido com sucesso${NC}"
-    USE_GH_CLI=false
-else
-    # Fallback para método antigo
-    if [ -z "$GITHUB_TOKEN" ]; then
-        echo -e "${YELLOW}⚠️  GITHUB_TOKEN não definido${NC}"
-        
-        # Tentar usar gh CLI como fallback
-        if command -v gh &> /dev/null && gh auth status &> /dev/null; then
-            echo -e "${GREEN}✅ Usando gh CLI autenticado${NC}"
-            USE_GH_CLI=true
-        else
-            echo -e "${RED}❌ Nenhuma autenticação disponível${NC}"
-            exit 1
-        fi
-    else
-        echo -e "${GREEN}✅ GITHUB_TOKEN encontrado${NC}"
-        USE_GH_CLI=false
-    fi
-fi
+# Este script prepara os arquivos para release manual no GitHub
+echo -e "${YELLOW}📝 Preparando release para publicação manual...${NC}"
 
 # Obter versão
 VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.2.0")
@@ -57,19 +29,14 @@ fi
 
 # Verificar se tag existe
 if ! git rev-parse ${VERSION} >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  Tag ${VERSION} não existe${NC}"
-    read -p "Criar tag agora? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}📝 Digite a mensagem da release:${NC}"
-        read -p "> " RELEASE_MSG
-        git tag -a ${VERSION} -m "${RELEASE_MSG}"
-        git push origin ${VERSION}
-        echo -e "${GREEN}✅ Tag criada e enviada${NC}"
-    else
-        exit 1
-    fi
+    echo -e "${RED}❌ Tag ${VERSION} não existe${NC}"
+    echo -e "${YELLOW}Crie a tag primeiro com:${NC}"
+    echo -e "  git tag -a ${VERSION} -m 'Mensagem da release'"
+    echo -e "  git push origin ${VERSION}"
+    exit 1
 fi
+
+echo -e "${GREEN}✅ Tag ${VERSION} encontrada${NC}"
 
 # Gerar notas de release
 echo -e "${YELLOW}📝 Gerando notas de release...${NC}"
@@ -150,80 +117,46 @@ sha256sum -c SHA256SUMS
 EOF
 )
 
-# Criar release
-echo -e "${YELLOW}🚀 Criando release no GitHub...${NC}"
+# Salvar notas em arquivo
+NOTES_FILE="RELEASE_NOTES_${VERSION}.md"
+echo "${RELEASE_NOTES}" > ${NOTES_FILE}
+echo -e "${GREEN}✅ Notas salvas em: ${NOTES_FILE}${NC}"
 echo ""
 
-if [ "$USE_GH_CLI" = true ]; then
-    # Usar gh CLI
-    gh release create ${VERSION} \
-        --title "Bagus Browser ${VERSION}" \
-        --notes "${RELEASE_NOTES}" \
-        dist/*.deb \
-        dist/*.tar.gz \
-        dist/SHA256SUMS
-    
-    RESULT=$?
-else
-    # Usar API REST com token
-    REPO="peder1981/bagus-browser-go"
-    API_URL="https://api.github.com/repos/${REPO}/releases"
-    
-    # Criar release
-    RESPONSE=$(curl -s -X POST \
-        -H "Authorization: token ${GITHUB_TOKEN}" \
-        -H "Accept: application/vnd.github.v3+json" \
-        "${API_URL}" \
-        -d "{
-            \"tag_name\": \"${VERSION}\",
-            \"name\": \"Bagus Browser ${VERSION}\",
-            \"body\": $(echo "${RELEASE_NOTES}" | jq -Rs .),
-            \"draft\": false,
-            \"prerelease\": false
-        }")
-    
-    RELEASE_ID=$(echo "${RESPONSE}" | jq -r '.id')
-    
-    if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
-        echo -e "${RED}❌ Erro ao criar release${NC}"
-        echo "${RESPONSE}" | jq .
-        exit 1
-    fi
-    
-    echo -e "${GREEN}✅ Release criada (ID: ${RELEASE_ID})${NC}"
-    
-    # Upload de arquivos
-    UPLOAD_URL="https://uploads.github.com/repos/${REPO}/releases/${RELEASE_ID}/assets"
-    
-    for file in dist/*.deb dist/*.tar.gz dist/SHA256SUMS; do
-        if [ -f "$file" ]; then
-            filename=$(basename "$file")
-            echo -e "${YELLOW}📤 Uploading ${filename}...${NC}"
-            
-            curl -s -X POST \
-                -H "Authorization: token ${GITHUB_TOKEN}" \
-                -H "Content-Type: application/octet-stream" \
-                "${UPLOAD_URL}?name=${filename}" \
-                --data-binary "@${file}" > /dev/null
-            
-            echo -e "${GREEN}   ✅ ${filename} uploaded${NC}"
-        fi
-    done
-    
-    RESULT=0
-fi
+# Listar arquivos para upload
+echo -e "${BLUE}📦 Arquivos prontos para upload:${NC}"
+ls -lh dist/
+echo ""
 
-if [ $RESULT -eq 0 ]; then
-    echo ""
-    echo -e "${GREEN}✅ Release criada com sucesso!${NC}"
-    echo ""
-    echo -e "${BLUE}🔗 URL: https://github.com/peder1981/bagus-browser-go/releases/tag/${VERSION}${NC}"
-    echo ""
-    echo -e "${GREEN}📦 Arquivos publicados:${NC}"
-    ls -lh dist/
-    echo ""
-    echo -e "${GREEN}🎉 Release completa!${NC}"
-else
-    echo -e "${RED}❌ Erro ao criar release${NC}"
-    exit 1
-fi
+# Instruções para publicação manual
+echo -e "${BLUE}=========================================${NC}"
+echo -e "${GREEN}✅ ARQUIVOS PREPARADOS PARA RELEASE!${NC}"
+echo -e "${BLUE}=========================================${NC}"
+echo ""
+echo -e "${YELLOW}📋 PRÓXIMOS PASSOS (Manual):${NC}"
+echo ""
+echo -e "${BLUE}1. Acesse:${NC}"
+echo -e "   ${GREEN}https://github.com/peder1981/bagus-browser-go/releases/new${NC}"
+echo ""
+echo -e "${BLUE}2. Preencha:${NC}"
+echo -e "   • Tag: ${GREEN}${VERSION}${NC} (já existe)"
+echo -e "   • Título: ${GREEN}Bagus Browser ${VERSION} - Menu Superior + Melhorias de UX${NC}"
+echo -e "   • Descrição: ${GREEN}Copie o conteúdo de ${NOTES_FILE}${NC}"
+echo ""
+echo -e "${BLUE}3. Upload de Arquivos:${NC}"
+echo -e "   Arraste estes arquivos para a área de upload:"
+for file in dist/*.deb dist/*.tar.gz dist/SHA256SUMS; do
+    if [ -f "$file" ]; then
+        filename=$(basename "$file")
+        size=$(du -h "$file" | cut -f1)
+        echo -e "   • ${GREEN}${filename}${NC} (${size})"
+    fi
+done
+echo ""
+echo -e "${BLUE}4. Publicar:${NC}"
+echo -e "   Clique em ${GREEN}'Publish release'${NC}"
+echo ""
+echo -e "${BLUE}=========================================${NC}"
+echo -e "${YELLOW}💡 Dica: Abra ${NOTES_FILE} em um editor para copiar as notas${NC}"
+echo -e "${BLUE}=========================================${NC}"
+echo ""

@@ -21,7 +21,7 @@ Compila o projeto e cria pacotes de instalação.
 ---
 
 ### release.sh
-Publica release no GitHub com OAuth2.
+Prepara arquivos e instruções para publicação manual no GitHub.
 
 **Uso:**
 ```bash
@@ -29,14 +29,17 @@ Publica release no GitHub com OAuth2.
 ```
 
 **Funcionalidades:**
-- OAuth2 com cache
-- Upload automático de pacotes
-- Notas de release automáticas
+- Verifica tag e arquivos dist/
+- Gera arquivo RELEASE_NOTES_vX.X.X.md
+- Lista arquivos para upload
+- Mostra instruções passo a passo para publicação manual
+
+**Nota:** Este script NÃO publica automaticamente. Ele prepara tudo e fornece instruções para você publicar manualmente via interface web do GitHub.
 
 ---
 
 ### publish.sh
-Build + Release em um comando.
+Build + Commit + Preparação de Release em um comando.
 
 **Uso:**
 ```bash
@@ -44,42 +47,57 @@ Build + Release em um comando.
 ```
 
 **Faz:**
-1. Build completo
-2. Commit e push
-3. Release no GitHub
+1. Build completo (compila e empacota)
+2. Commit e push para GitHub
+3. Prepara instruções para release manual
+
+**Após executar:** Siga as instruções exibidas para publicar a release manualmente no GitHub.
 
 ---
 
-### github-auth.sh
-Gerenciador de autenticação OAuth2 para GitHub.
+### install-desktop-icon.sh
+Instala ícone e atalho do desktop.
 
 **Uso:**
 ```bash
-# Obter token
-./scripts/github-auth.sh get
-
-# Ver status
-./scripts/github-auth.sh status
-
-# Limpar cache
-./scripts/github-auth.sh clear
+./scripts/install-desktop-icon.sh
 ```
+
+**Funcionalidades:**
+- Copia ícones para /usr/share/icons
+- Cria arquivo .desktop
+- Atualiza caches do sistema
 
 ---
 
 ## 🚀 Uso Rápido
 
-### Via Makefile (Recomendado)
+### Workflow Completo
 ```bash
-make build      # Compilar
-make release    # Publicar
-make publish    # Tudo de uma vez
+# 1. Build e empacotamento
+bash scripts/build.sh
+
+# 2. Commit e push
+git add -A
+git commit -m "Sua mensagem"
+git push origin main
+
+# 3. Criar tag
+git tag -a v4.2.0 -m "Release v4.2.0"
+git push origin v4.2.0
+
+# 4. Preparar release
+bash scripts/release.sh
+
+# 5. Publicar manualmente
+# Siga as instruções exibidas pelo script
+# Acesse: https://github.com/peder1981/bagus-browser-go/releases/new
 ```
 
-### Direto
+### Ou use o script completo
 ```bash
-./scripts/build.sh
-./scripts/release.sh
+bash scripts/publish.sh
+# Depois siga as instruções para publicação manual
 ```
 
 ---
