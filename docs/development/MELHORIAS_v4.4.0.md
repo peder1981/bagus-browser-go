@@ -212,3 +212,106 @@ webView.widget.Connect("print", func() {
 **Criado em:** 22/10/2025 09:18 BRT  
 **Versão alvo:** 4.4.0  
 **Status:** Planejamento
+
+---
+
+---
+
+## 🔄 Atualização: Ctrl+Shift+T Implementado
+
+**Data:** 22/10/2025 09:24 BRT
+
+### Problema Identificado
+O atalho **Ctrl+Shift+T** não estava restaurando a última aba fechada.
+
+### Causa
+- Funcionalidade não estava implementada
+- Faltava histórico de abas fechadas
+- Método `ReopenClosedTab()` não existia
+
+### Solução Implementada
+
+#### 1. Struct ClosedTab
+```go
+type ClosedTab struct {
+    URL   string
+    Title string
+}
+```
+
+#### 2. Histórico no Browser
+```go
+type Browser struct {
+    // ...
+    closedTabs []ClosedTab // Histórico de abas fechadas (máx 10)
+}
+```
+
+#### 3. Salvar ao Fechar
+```go
+func (b *Browser) CloseCurrentTab() {
+    // Salvar aba no histórico antes de fechar
+    closedTab := ClosedTab{
+        URL:   uri,
+        Title: title,
+    }
+    b.closedTabs = append(b.closedTabs, closedTab)
+    
+    // Limitar histórico a 10 abas
+    if len(b.closedTabs) > 10 {
+        b.closedTabs = b.closedTabs[1:]
+    }
+}
+```
+
+#### 4. Método ReopenClosedTab
+```go
+func (b *Browser) ReopenClosedTab() {
+    if len(b.closedTabs) == 0 {
+        log.Println("⚠️  Nenhuma aba fechada para reabrir")
+        return
+    }
+    
+    // Pegar última aba fechada
+    lastClosed := b.closedTabs[len(b.closedTabs)-1]
+    b.closedTabs = b.closedTabs[:len(b.closedTabs)-1]
+    
+    // Reabrir aba
+    b.NewTab(lastClosed.URL)
+}
+```
+
+#### 5. Atalho Ctrl+Shift+T
+```go
+if ctrlPressed && shiftPressed && keyVal == gdk.KEY_t {
+    log.Println("⌨️  Ctrl+Shift+T - Reabrir última aba fechada")
+    b.ReopenClosedTab()
+    return true
+}
+```
+
+### Funcionalidades
+- ✅ Histórico de até 10 abas fechadas
+- ✅ Ctrl+Shift+T reabre última aba
+- ✅ LIFO (Last In, First Out)
+- ✅ Não salva abas vazias ou about:blank
+- ✅ Logs informativos
+
+### Testes
+```bash
+# 1. Abrir várias abas
+# 2. Fechar algumas abas (Ctrl+W)
+# 3. Pressionar Ctrl+Shift+T
+# 4. Verificar se última aba fechada foi reaberta
+# 5. Pressionar Ctrl+Shift+T novamente
+# 6. Verificar se penúltima aba foi reaberta
+```
+
+**Status:** ✅ Implementado e testado
+
+---
+
+**Implementado em:** 22/10/2025 06:55 BRT  
+**Atualizado em:** 22/10/2025 09:24 BRT  
+**Versão:** 4.4.0  
+**Status:** ✅ Completo

@@ -269,12 +269,19 @@ type Tab struct {
 	label   *gtk.Label
 }
 
+// ClosedTab representa uma aba fechada
+type ClosedTab struct {
+	URL   string
+	Title string
+}
+
 // Browser representa o navegador
 type Browser struct {
 	window          *gtk.Window
 	notebook        *gtk.Notebook
 	urlEntry        *gtk.Entry
 	tabs            []*Tab
+	closedTabs      []ClosedTab // Histórico de abas fechadas
 	validator       *URLValidator
 	privacyManager  *PrivacyManager
 	bookmarkManager *BookmarkManager
@@ -362,6 +369,7 @@ func NewBrowser() *Browser {
 		notebook:        notebook,
 		urlEntry:        urlEntry,
 		tabs:            make([]*Tab, 0),
+		closedTabs:      make([]ClosedTab, 0),
 		validator:       NewURLValidator(),
 		privacyManager:  NewPrivacyManager(),
 		bookmarkManager: bookmarkManager,
@@ -588,6 +596,13 @@ func (b *Browser) setupKeyboardShortcuts() {
 		if ctrlPressed && keyVal == gdk.KEY_w {
 			log.Println("⌨️  Ctrl+W - Fechar aba")
 			b.CloseCurrentTab()
+			return true
+		}
+
+		// Ctrl+Shift+T - Reabrir última aba fechada
+		if ctrlPressed && shiftPressed && keyVal == gdk.KEY_t {
+			log.Println("⌨️  Ctrl+Shift+T - Reabrir última aba fechada")
+			b.ReopenClosedTab()
 			return true
 		}
 
@@ -906,6 +921,29 @@ func (b *Browser) CloseCurrentTab() {
 	}
 
 	if pageNum >= 0 && pageNum < len(b.tabs) {
+		// Salvar aba no histórico antes de fechar
+		tab := b.tabs[pageNum]
+		if tab.webView != nil {
+			uri := tab.webView.GetURI()
+			title := tab.webView.GetTitle()
+			
+			// Não salvar abas vazias ou about:blank
+			if uri != "" && uri != "about:blank" {
+				closedTab := ClosedTab{
+					URL:   uri,
+					Title: title,
+				}
+				b.closedTabs = append(b.closedTabs, closedTab)
+				
+				// Limitar histórico a 10 abas
+				if len(b.closedTabs) > 10 {
+					b.closedTabs = b.closedTabs[1:]
+				}
+				
+				log.Printf("💾 Aba salva no histórico: %s", title)
+			}
+		}
+		
 		// Remover do slice
 		b.tabs = append(b.tabs[:pageNum], b.tabs[pageNum+1:]...)
 		
@@ -914,6 +952,22 @@ func (b *Browser) CloseCurrentTab() {
 		
 		log.Printf("🗑️  Aba fechada (restam: %d)", b.notebook.GetNPages())
 	}
+}
+
+// ReopenClosedTab reabre a última aba fechada
+func (b *Browser) ReopenClosedTab() {
+	if len(b.closedTabs) == 0 {
+		log.Println("⚠️  Nenhuma aba fechada para reabrir")
+		return
+	}
+	
+	// Pegar última aba fechada
+	lastClosed := b.closedTabs[len(b.closedTabs)-1]
+	b.closedTabs = b.closedTabs[:len(b.closedTabs)-1]
+	
+	// Reabrir aba
+	log.Printf("♻️  Reabrindo aba: %s", lastClosed.Title)
+	b.NewTab(lastClosed.URL)
 }
 
 // ZoomIn aumenta o zoom da aba atual
