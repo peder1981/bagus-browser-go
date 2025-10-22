@@ -15,7 +15,7 @@ echo ""
 
 # 1. Build
 echo -e "${BLUE}[1/3] 🔨 Building...${NC}"
-./build.sh
+bash scripts/build.sh
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Build failed${NC}"
     exit 1
@@ -35,7 +35,7 @@ echo ""
 
 # 3. Release
 echo -e "${BLUE}[3/3] 🚀 Creating GitHub release...${NC}"
-./release.sh
+bash scripts/release.sh
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Release failed${NC}"
     exit 1

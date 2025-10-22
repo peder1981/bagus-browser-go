@@ -44,7 +44,7 @@ else
 fi
 
 # Obter versão
-VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.1.0")
+VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.2.0")
 echo -e "${GREEN}Versão: ${VERSION}${NC}"
 echo ""
 
@@ -83,12 +83,14 @@ Browser minimalista, seguro e privado construído em Go.
 ### ✨ Features
 
 - 🌐 WebView completo (WebKit2GTK)
-- 📑 Múltiplas abas independentes
+- 📏 Múltiplas abas independentes
+- 📝 Menu superior completo (Arquivo, Navegação, Favoritos, Ferramentas)
 - 🔍 Buscar na página (Ctrl+F)
-- ⭐ Favoritos com criptografia AES-256 (Ctrl+D)
-- 📥 Gerenciador de downloads
+- ⭐ Favoritos com criptografia AES-256 (Ctrl+D, Ctrl+Shift+B)
+- 📅 Gerenciador de downloads
 - 🔍 Zoom (Ctrl++, Ctrl+-, Ctrl+0)
-- ⌨️  15 atalhos de teclado
+- 🎯 Foco automático na barra de URL ao abrir nova aba
+- ⌨️  16 atalhos de teclado
 
 ### 🔒 Segurança
 
@@ -108,7 +110,7 @@ Browser minimalista, seguro e privado construído em Go.
 ### 📊 Estatísticas
 
 - **Tamanho:** 6.4MB
-- **Atalhos:** 15
+- **Atalhos:** 16
 - **Plataforma:** Linux only
 - **Licença:** MIT
 

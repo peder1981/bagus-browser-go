@@ -66,24 +66,74 @@ Primeira versão de produção do Bagus Browser com todos os 4 pilares implement
 
 ---
 
-## [Unreleased] - v4.1
+## [4.2.0] - 2025-10-21
 
-### Planejado
-- Favoritos (Ctrl+D)
-- Buscar na página (Ctrl+F)
-- Downloads
-- Histórico global
+### 🎨 Melhorias de UX
+
+#### Adicionado
+- **Menu Superior Completo** - Menu bar profissional com 4 seções organizadas
+  - Menu Arquivo (Nova Aba, Fechar Aba, Sair)
+  - Menu Navegação (Voltar, Avançar, Recarregar)
+  - Menu Favoritos (Adicionar, Gerenciar)
+  - Menu Ferramentas (Buscar, Zoom)
+- **Foco Automático na Barra de URL** - Ao abrir nova aba, cursor vai direto para a barra
+- **Novo Atalho Ctrl+Q** - Sair do navegador
+- Texto selecionado automaticamente ao focar barra de URL
+
+#### Corrigido
+- **Ctrl+Shift+B** - Gerenciar Favoritos agora funciona corretamente
+  - Problema: GTK retorna KEY_B (maiúscula) quando Shift pressionado
+  - Solução: Aceita tanto KEY_b quanto KEY_B
+- Nome do projeto simplificado para "Bagus Browser" (removido "POC" e "WebKit CGO")
+
+#### Melhorado
+- Interface mais intuitiva e profissional
+- Descoberta de funcionalidades facilitada via menu
+- UX de navegação mais rápida e natural
+- Acessibilidade melhorada com múltiplas formas de acesso
+
+### ⌨️ Atalhos Atualizados (16 total)
+- Ctrl+Q - Sair (NOVO)
+- Ctrl+Shift+B - Gerenciar Favoritos (CORRIGIDO)
+- Todos os atalhos anteriores mantidos
 
 ---
 
-## [Unreleased] - v4.2
+## [4.1.0] - 2025-10-21
 
-### Planejado
-- Melhorias de UI
-- Ícone do aplicativo
-- Favicon nas abas
-- Indicador de carregamento
-- Botão X em cada aba
+### ✨ Features Implementadas
+
+#### Adicionado
+- **Favoritos com Criptografia AES-256-GCM**
+  - Ctrl+D para adicionar
+  - Ctrl+Shift+B para gerenciar
+  - PBKDF2 com 100,000 iterações
+  - Storage: ~/.config/bagus-browser/bookmarks.enc
+- **Buscar na Página**
+  - Ctrl+F para abrir busca
+  - F3 para próximo resultado
+  - Shift+F3 para resultado anterior
+  - Busca incremental case-insensitive
+- **Gerenciador de Downloads**
+  - Pasta padrão: ~/Downloads
+  - Nomes únicos automáticos
+- **Sistema de Zoom Completo**
+  - Ctrl++ para aumentar
+  - Ctrl+- para diminuir
+  - Ctrl+0 para resetar
+  - Zoom independente por aba
+
+#### Segurança
+- Criptografia AES-256-GCM para dados sensíveis
+- PBKDF2 para derivação de chaves
+- SHA-256 para hashing
+- Modo autenticado (GCM) para proteção contra adulteração
+
+### ⌨️ Atalhos (15 total)
+- Navegação: 6 atalhos
+- Zoom: 3 atalhos
+- Busca: 4 atalhos
+- Favoritos: 2 atalhos
 
 ---
 

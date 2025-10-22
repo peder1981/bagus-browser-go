@@ -10,7 +10,7 @@ NC='\033[0m' # No Color
 
 # Informações do projeto
 APP_NAME="bagus-browser"
-VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.1.0")
+VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.2.0")
 BUILD_DIR="build"
 DIST_DIR="dist"
 
