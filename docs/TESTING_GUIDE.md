@@ -1,4 +1,4 @@
-# 🧪 Guia de Testes - Bagus Browser v4.1
+﻿# 🧪 Guia de Testes - Bagus Browser v4.1
 
 ## 🚀 Como Executar
 

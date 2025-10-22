@@ -136,7 +136,7 @@ go build -o bagus-webkit .
 
 ### Logs ao Iniciar
 ```
-🌐 Iniciando Bagus Browser POC - WebKit CGO...
+🌐 Iniciando Bagus Browser...
 🕵️  Bagus Browser - Configurações de Privacidade:
    ✅ Zero telemetria
    ✅ Third-party cookies bloqueados
@@ -216,9 +216,9 @@ type Browser struct {
 
 ---
 
-## 📊 Comparação: POC v2 vs WebKit CGO
+## 📊 Evolução do Bagus Browser
 
-| Feature | POC v2 (Labels) | WebKit CGO |
+| Feature | Versão Anterior | Versão Atual |
 |---------|-----------------|------------|
 | **Abas** | ✅ | ✅ |
 | **WebView** | ❌ Labels | ✅ WebKit real |
@@ -311,7 +311,7 @@ MIT License - Veja [LICENSE](LICENSE) para detalhes
 
 ## 🎊 CONCLUSÃO
 
-**POC WebKit CGO é um SUCESSO COMPLETO!** 🚀
+**Bagus Browser é um SUCESSO COMPLETO!** 🚀
 
 - ✅ WebView funciona via CGO
 - ✅ Abas funcionam

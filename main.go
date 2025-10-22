@@ -275,7 +275,7 @@ func main() {
 	runtime.LockOSThread()
 	gtk.Init(nil)
 
-	log.Println("🌐 Iniciando Bagus Browser POC - WebKit CGO...")
+	log.Println("🌐 Iniciando Bagus Browser...")
 
 	browser := NewBrowser()
 	browser.Show()
@@ -300,7 +300,7 @@ func NewBrowser() *Browser {
 		log.Fatal("Erro ao criar janela:", err)
 	}
 
-	win.SetTitle("Bagus Browser POC - WebKit CGO")
+	win.SetTitle("Bagus Browser")
 	win.SetDefaultSize(1200, 800)
 	win.Connect("destroy", gtk.MainQuit)
 
@@ -351,11 +351,15 @@ func NewBrowser() *Browser {
 	// Logar informações de privacidade
 	browser.privacyManager.LogPrivacyInfo()
 
+	// Criar menu
+	menuBar := browser.createMenuBar()
+	
 	// Criar toolbar
 	toolbar := browser.createToolbar()
 
 	// Layout
 	vbox, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	vbox.PackStart(menuBar, false, false, 0)
 	vbox.PackStart(toolbar, false, false, 0)
 	vbox.PackStart(notebook, true, true, 0)
 
@@ -368,6 +372,119 @@ func NewBrowser() *Browser {
 	browser.NewTab("https://duckduckgo.com")
 
 	return browser
+}
+
+// createMenuBar cria a barra de menu
+func (b *Browser) createMenuBar() *gtk.MenuBar {
+	menuBar, _ := gtk.MenuBarNew()
+	
+	// Menu Arquivo
+	menuArquivo, _ := gtk.MenuItemNewWithLabel("Arquivo")
+	menuArquivoSub, _ := gtk.MenuNew()
+	
+	itemNovaAba, _ := gtk.MenuItemNewWithLabel("Nova Aba (Ctrl+T)")
+	itemNovaAba.Connect("activate", func() {
+		b.NewTab("https://duckduckgo.com")
+	})
+	menuArquivoSub.Append(itemNovaAba)
+	
+	itemFecharAba, _ := gtk.MenuItemNewWithLabel("Fechar Aba (Ctrl+W)")
+	itemFecharAba.Connect("activate", func() {
+		b.CloseCurrentTab()
+	})
+	menuArquivoSub.Append(itemFecharAba)
+	
+	separador1, _ := gtk.SeparatorMenuItemNew()
+	menuArquivoSub.Append(separador1)
+	
+	itemSair, _ := gtk.MenuItemNewWithLabel("Sair (Ctrl+Q)")
+	itemSair.Connect("activate", func() {
+		gtk.MainQuit()
+	})
+	menuArquivoSub.Append(itemSair)
+	
+	menuArquivo.SetSubmenu(menuArquivoSub)
+	menuBar.Append(menuArquivo)
+	
+	// Menu Navegação
+	menuNav, _ := gtk.MenuItemNewWithLabel("Navegação")
+	menuNavSub, _ := gtk.MenuNew()
+	
+	itemVoltar, _ := gtk.MenuItemNewWithLabel("Voltar (Alt+←)")
+	itemVoltar.Connect("activate", func() {
+		b.GoBack()
+	})
+	menuNavSub.Append(itemVoltar)
+	
+	itemAvancar, _ := gtk.MenuItemNewWithLabel("Avançar (Alt+→)")
+	itemAvancar.Connect("activate", func() {
+		b.GoForward()
+	})
+	menuNavSub.Append(itemAvancar)
+	
+	itemRecarregar, _ := gtk.MenuItemNewWithLabel("Recarregar (F5)")
+	itemRecarregar.Connect("activate", func() {
+		b.Reload()
+	})
+	menuNavSub.Append(itemRecarregar)
+	
+	menuNav.SetSubmenu(menuNavSub)
+	menuBar.Append(menuNav)
+	
+	// Menu Favoritos
+	menuFavoritos, _ := gtk.MenuItemNewWithLabel("Favoritos")
+	menuFavoritosSub, _ := gtk.MenuNew()
+	
+	itemAdicionarFavorito, _ := gtk.MenuItemNewWithLabel("Adicionar Favorito (Ctrl+D)")
+	itemAdicionarFavorito.Connect("activate", func() {
+		b.AddBookmark()
+	})
+	menuFavoritosSub.Append(itemAdicionarFavorito)
+	
+	itemGerenciarFavoritos, _ := gtk.MenuItemNewWithLabel("Gerenciar Favoritos (Ctrl+Shift+B)")
+	itemGerenciarFavoritos.Connect("activate", func() {
+		b.ShowBookmarks()
+	})
+	menuFavoritosSub.Append(itemGerenciarFavoritos)
+	
+	menuFavoritos.SetSubmenu(menuFavoritosSub)
+	menuBar.Append(menuFavoritos)
+	
+	// Menu Ferramentas
+	menuFerramentas, _ := gtk.MenuItemNewWithLabel("Ferramentas")
+	menuFerramentasSub, _ := gtk.MenuNew()
+	
+	itemBuscar, _ := gtk.MenuItemNewWithLabel("Buscar na Página (Ctrl+F)")
+	itemBuscar.Connect("activate", func() {
+		b.ShowFindBar()
+	})
+	menuFerramentasSub.Append(itemBuscar)
+	
+	separador2, _ := gtk.SeparatorMenuItemNew()
+	menuFerramentasSub.Append(separador2)
+	
+	itemZoomIn, _ := gtk.MenuItemNewWithLabel("Aumentar Zoom (Ctrl++)")
+	itemZoomIn.Connect("activate", func() {
+		b.ZoomIn()
+	})
+	menuFerramentasSub.Append(itemZoomIn)
+	
+	itemZoomOut, _ := gtk.MenuItemNewWithLabel("Diminuir Zoom (Ctrl+-)")
+	itemZoomOut.Connect("activate", func() {
+		b.ZoomOut()
+	})
+	menuFerramentasSub.Append(itemZoomOut)
+	
+	itemZoomReset, _ := gtk.MenuItemNewWithLabel("Zoom 100% (Ctrl+0)")
+	itemZoomReset.Connect("activate", func() {
+		b.ZoomReset()
+	})
+	menuFerramentasSub.Append(itemZoomReset)
+	
+	menuFerramentas.SetSubmenu(menuFerramentasSub)
+	menuBar.Append(menuFerramentas)
+	
+	return menuBar
 }
 
 // createToolbar cria a barra de ferramentas
@@ -431,6 +548,7 @@ func (b *Browser) setupKeyboardShortcuts() {
 
 		ctrlPressed := (state & uint(gdk.CONTROL_MASK)) != 0
 		altPressed := (state & uint(gdk.MOD1_MASK)) != 0
+		shiftPressed := (state & uint(gdk.SHIFT_MASK)) != 0
 
 		// Ctrl+T - Nova aba
 		if ctrlPressed && keyVal == gdk.KEY_t {
@@ -525,7 +643,6 @@ func (b *Browser) setupKeyboardShortcuts() {
 		}
 
 		// Shift+F3 - Resultado anterior
-		shiftPressed := (state & uint(gdk.SHIFT_MASK)) != 0
 		if shiftPressed && keyVal == gdk.KEY_F3 {
 			log.Println("⌨️  Shift+F3 - Resultado anterior")
 			b.FindPrevious()
@@ -540,9 +657,16 @@ func (b *Browser) setupKeyboardShortcuts() {
 		}
 
 		// Ctrl+Shift+B - Gerenciar favoritos
-		if ctrlPressed && shiftPressed && keyVal == gdk.KEY_b {
+		if ctrlPressed && shiftPressed && (keyVal == gdk.KEY_b || keyVal == gdk.KEY_B) {
 			log.Println("⌨️  Ctrl+Shift+B - Gerenciar favoritos")
 			b.ShowBookmarks()
+			return true
+		}
+		
+		// Ctrl+Q - Sair
+		if ctrlPressed && keyVal == gdk.KEY_q {
+			log.Println("⌨️  Ctrl+Q - Sair")
+			gtk.MainQuit()
 			return true
 		}
 
@@ -629,6 +753,10 @@ func (b *Browser) NewTab(url string) {
 	webView.LoadURI(url)
 
 	b.window.ShowAll()
+	
+	// Focar na barra de URL após criar aba
+	b.urlEntry.GrabFocus()
+	b.urlEntry.SelectRegion(0, -1)
 
 	log.Printf("✅ Aba %d criada - Carregando: %s", tabIndex+1, url)
 }
