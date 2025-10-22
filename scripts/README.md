@@ -1,105 +1,102 @@
-# Scripts - Bagus Browser
+# 🛠️ Scripts do Bagus Browser
 
-Scripts de build, release e automação.
+Scripts para build, release e gerenciamento de versões.
 
-## 📜 Scripts Disponíveis
+---
+
+## 🚀 Workflow Simplificado (RECOMENDADO)
+
+### Criar Nova Release
+
+```bash
+# Um único comando faz tudo\!
+./scripts/version.sh release 4.5.0
+```
+
+**O que faz:**
+1. ✅ Atualiza CHANGELOG.md
+2. ✅ Cria release notes em `docs/releases/`
+3. ✅ Commita mudanças
+4. ✅ Cria tag git
+5. ✅ Compila e empacota (.deb + .tar.gz)
+6. ✅ Limpa arquivos temporários
+7. ✅ Push para GitHub
+
+---
+
+## 📋 Scripts Disponíveis
+
+### version.sh ⭐ NOVO\!
+Gerenciador centralizado de versões.
+
+```bash
+# Ver versão atual
+./scripts/version.sh current
+
+# Criar release completa
+./scripts/version.sh release 4.5.0
+```
 
 ### build.sh
-Compila o projeto e cria pacotes de instalação.
+Compila e empacota o browser.
 
-**Uso:**
 ```bash
 ./scripts/build.sh
 ```
 
-**Cria:**
-- `build/bagus-browser` - Binário
-- `dist/bagus-browser_v4.1.0_amd64.deb` - Pacote Debian
-- `dist/bagus-browser_v4.1.0_linux_amd64.tar.gz` - Tarball
-- `dist/SHA256SUMS` - Checksums
-
----
+Cria:
+- `dist/bagus-browser_vX.X.X_amd64.deb`
+- `dist/bagus-browser_vX.X.X_linux_amd64.tar.gz`
+- `dist/SHA256SUMS`
 
 ### release.sh
-Prepara arquivos e instruções para publicação manual no GitHub.
+Prepara release notes e instruções.
 
-**Uso:**
 ```bash
 ./scripts/release.sh
 ```
 
-**Funcionalidades:**
-- Verifica tag e arquivos dist/
-- Gera arquivo RELEASE_NOTES_vX.X.X.md
-- Lista arquivos para upload
-- Mostra instruções passo a passo para publicação manual
-
-**Nota:** Este script NÃO publica automaticamente. Ele prepara tudo e fornece instruções para você publicar manualmente via interface web do GitHub.
-
----
-
 ### publish.sh
-Build + Commit + Preparação de Release em um comando.
+Build + Instalação local.
 
-**Uso:**
 ```bash
 ./scripts/publish.sh
 ```
 
-**Faz:**
-1. Build completo (compila e empacota)
-2. Commit e push para GitHub
-3. Prepara instruções para release manual
-
-**Após executar:** Siga as instruções exibidas para publicar a release manualmente no GitHub.
-
 ---
 
-### install-desktop-icon.sh
-Instala ícone e atalho do desktop.
+## 📁 Organização de Arquivos
 
-**Uso:**
-```bash
-./scripts/install-desktop-icon.sh
 ```
+scripts/
+├── README.md           # Este arquivo
+├── version.sh          # Gerenciador de versões ⭐
+├── build.sh            # Build e empacotamento
+├── publish.sh          # Publicação local
+└── release.sh          # Preparação de release
 
-**Funcionalidades:**
-- Copia ícones para /usr/share/icons
-- Cria arquivo .desktop
-- Atualiza caches do sistema
+dist/                   # Pacotes finais (mantido)
+├── bagus-browser_vX.X.X_amd64.deb
+├── bagus-browser_vX.X.X_linux_amd64.tar.gz
+└── SHA256SUMS
 
----
+build/                  # Temporário (removido após build)
 
-## 🚀 Uso Rápido
-
-### Workflow Completo
-```bash
-# 1. Build e empacotamento
-bash scripts/build.sh
-
-# 2. Commit e push
-git add -A
-git commit -m "Sua mensagem"
-git push origin main
-
-# 3. Criar tag
-git tag -a v4.2.0 -m "Release v4.2.0"
-git push origin v4.2.0
-
-# 4. Preparar release
-bash scripts/release.sh
-
-# 5. Publicar manualmente
-# Siga as instruções exibidas pelo script
-# Acesse: https://github.com/peder1981/bagus-browser-go/releases/new
-```
-
-### Ou use o script completo
-```bash
-bash scripts/publish.sh
-# Depois siga as instruções para publicação manual
+docs/
+├── releases/           # Release notes
+└── development/        # Documentação técnica
 ```
 
 ---
 
-**Veja a documentação em `/docs` para mais detalhes.**
+## 🎯 Pilares do Projeto
+
+1. ✅ **Organização:** Arquivos nas pastas corretas
+2. ✅ **Limpeza:** Sem lixo na raiz
+3. ✅ **Automação:** Um comando para tudo
+4. ✅ **Documentação:** Tudo documentado
+
+---
+
+**Atualizado em:** 22/10/2025  
+**Versão:** 4.4.0
