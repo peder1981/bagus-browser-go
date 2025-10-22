@@ -118,7 +118,7 @@ EOF
 )
 
 # Salvar notas em arquivo
-NOTES_FILE="RELEASE_NOTES_${VERSION}.md"
+NOTES_FILE="docs/releases/RELEASE_NOTES_${VERSION}.md"
 echo "${RELEASE_NOTES}" > ${NOTES_FILE}
 echo -e "${GREEN}✅ Notas salvas em: ${NOTES_FILE}${NC}"
 echo ""
