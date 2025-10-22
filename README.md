@@ -1,4 +1,4 @@
-# Bagus Browser v4.3.0
+# Bagus Browser v4.4.0
 
 ## 🎉 Release
 
@@ -8,21 +8,18 @@ Browser minimalista, seguro e privado construído em Go.
 
 - 🌐 WebView completo (WebKit2GTK)
 - 📏 Múltiplas abas independentes
-- 📝 Menu superior completo (Arquivo, Navegação, Favoritos, Ferramentas)
-- 🔍 Buscar na página (Ctrl+F)
-- ⭐ Favoritos com criptografia AES-256 (Ctrl+D, Ctrl+Shift+B)
-- 📅 Gerenciador de downloads
-- 🔍 Zoom (Ctrl++, Ctrl+-, Ctrl+0)
-- 🎯 Foco automático na barra de URL ao abrir nova aba
-- ⌨️  27 atalhos de teclado
-- 🔄 Navegação entre abas (Ctrl+Tab, Ctrl+1-9)
+- 📝 Menu superior completo
+- 🔍 Buscar na página
+- ⭐ Favoritos criptografados
+- 🔄 Restauração de sessão
+- 🖨️ Impressão (PDF e impressoras)
+- ⌨️  30 atalhos de teclado
 
 ### 🔒 Segurança
 
-- AES-256-GCM para favoritos
+- AES-256-GCM para favoritos e sessões
 - PBKDF2 (100,000 iterações)
 - Validação rigorosa de URLs
-- Sanitização de input
 - WebView hardened
 
 ### 🕵️ Privacidade
@@ -35,7 +32,7 @@ Browser minimalista, seguro e privado construído em Go.
 ### 📊 Estatísticas
 
 - **Tamanho:** 6.4MB
-- **Atalhos:** 27
+- **Atalhos:** 30
 - **Plataforma:** Linux only
 - **Licença:** MIT
 
@@ -43,32 +40,25 @@ Browser minimalista, seguro e privado construído em Go.
 
 #### Ubuntu/Debian (.deb)
 ```bash
-wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.3.0/bagus-browser_4.3.0_amd64.deb
-sudo dpkg -i bagus-browser_4.3.0_amd64.deb
-sudo apt-get install -f  # Instalar dependências
+wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.4.0/bagus-browser_4.4.0_amd64.deb
+sudo dpkg -i bagus-browser_4.4.0_amd64.deb
+sudo apt-get install -f
 ```
 
 #### Tarball
 ```bash
-wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.3.0/bagus-browser_v4.3.0_linux_amd64.tar.gz
-tar -xzf bagus-browser_v4.3.0_linux_amd64.tar.gz
-./bagus-browser
+wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.4.0/bagus-browser_4.4.0_linux_amd64.tar.gz
+tar -xzf bagus-browser_4.4.0_linux_amd64.tar.gz
+sudo mv bagus-browser /usr/local/bin/
 ```
 
-### 🔐 Verificação
+### 🔗 Links
 
-```bash
-wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.3.0/SHA256SUMS
-sha256sum -c SHA256SUMS
-```
-
-### 📚 Documentação
-
-- [README](https://github.com/peder1981/bagus-browser-go/blob/main/README.md)
-- [CHANGELOG](https://github.com/peder1981/bagus-browser-go/blob/main/CHANGELOG.md)
-- [Segurança](https://github.com/peder1981/bagus-browser-go/blob/main/docs/SECURITY.md)
-- [Privacidade](https://github.com/peder1981/bagus-browser-go/blob/main/docs/PRIVACY.md)
+- **Código:** https://github.com/peder1981/bagus-browser-go
+- **Issues:** https://github.com/peder1981/bagus-browser-go/issues
+- **Documentação:** https://github.com/peder1981/bagus-browser-go/tree/main/docs
 
 ---
 
-**Bagus Browser - Navegue com privacidade e segurança** 🌐🔒
+**Data:** 2025-10-22  
+**Versão:** 4.4.0
