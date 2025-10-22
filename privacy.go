@@ -49,7 +49,7 @@ func DefaultPrivacyConfig() *PrivacyConfig {
 	return &PrivacyConfig{
 		BlockThirdPartyCookies: true,
 		BlockGeolocation:       true,
-		BlockNotifications:     true,
+		BlockNotifications:     false, // Permitir notificações (usuário pode controlar por site)
 		BlockMediaAccess:       true,
 		BlockWebGL:             true,
 		BlockWebAudio:          true,
@@ -100,7 +100,7 @@ func (pm *PrivacyManager) LogPrivacyInfo() {
 	log.Println("   ✅ Sem rastreamento")
 	log.Println("   ✅ Third-party cookies bloqueados")
 	log.Println("   ✅ Geolocalização bloqueada")
-	log.Println("   ✅ Notificações bloqueadas")
+	log.Println("   ✅ Notificações habilitadas (controladas por site)")
 	log.Println("   ✅ Acesso a mídia bloqueado")
 	log.Println("   ✅ WebGL bloqueado (anti-fingerprinting)")
 	log.Println("   ✅ WebAudio bloqueado (anti-fingerprinting)")
