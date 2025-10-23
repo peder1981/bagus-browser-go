@@ -120,7 +120,9 @@ import "C"
 import (
 	"fmt"
 	"log"
+	"os"
 	"runtime"
+	"strings"
 	"unsafe"
 
 	"github.com/gotk3/gotk3/gdk"
@@ -325,7 +327,40 @@ func main() {
 
 	browser := NewBrowser()
 	browser.config = config
+	
+	// Processar argumentos de linha de comando (URLs)
+	args := os.Args[1:]
+	var urlsToOpen []string
+	
+	for _, arg := range args {
+		// Ignorar flags
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		
+		// Verificar se é URL válida
+		if strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "https://") || strings.HasPrefix(arg, "file://") {
+			urlsToOpen = append(urlsToOpen, arg)
+			log.Printf("🔗 URL externa detectada: %s", arg)
+		} else if strings.Contains(arg, ".") && !strings.Contains(arg, "/") {
+			// Pode ser domínio sem protocolo
+			urlsToOpen = append(urlsToOpen, "https://"+arg)
+			log.Printf("🔗 Domínio detectado: %s (adicionando https://)", arg)
+		}
+	}
+	
 	browser.Show()
+	
+	// Abrir URLs após mostrar janela
+	if len(urlsToOpen) > 0 {
+		glib.IdleAdd(func() bool {
+			for _, url := range urlsToOpen {
+				log.Printf("📂 Abrindo URL em nova aba: %s", url)
+				browser.NewTab(url)
+			}
+			return false
+		})
+	}
 
 	log.Println("✅ Browser iniciado com WebView!")
 	log.Println("📝 Navegue para diferentes sites")

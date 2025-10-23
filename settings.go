@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os/exec"
+	"strings"
 	
 	"github.com/gotk3/gotk3/gtk"
 )
@@ -40,22 +42,27 @@ func (b *Browser) showSettingsDialog() {
 	}
 	contentArea.Add(notebook)
 	
-	// Aba 1: Segurança
+	// Aba 1: Geral
+	generalBox := createGeneralSettings(b.config)
+	generalLabel, _ := gtk.LabelNew("⚙️  Geral")
+	notebook.AppendPage(generalBox, generalLabel)
+	
+	// Aba 2: Segurança
 	securityBox := createSecuritySettings(b.config)
 	securityLabel, _ := gtk.LabelNew("🔒 Segurança")
 	notebook.AppendPage(securityBox, securityLabel)
 	
-	// Aba 2: Sessões
+	// Aba 3: Sessões
 	sessionBox := createSessionSettings(b.config)
 	sessionLabel, _ := gtk.LabelNew("🔄 Sessões")
 	notebook.AppendPage(sessionBox, sessionLabel)
 	
-	// Aba 3: Performance
+	// Aba 4: Performance
 	performanceBox := createPerformanceSettings(b.config)
 	performanceLabel, _ := gtk.LabelNew("⚡ Performance")
 	notebook.AppendPage(performanceBox, performanceLabel)
 	
-	// Aba 4: Privacidade
+	// Aba 5: Privacidade
 	privacyBox := createPrivacySettings(b.config)
 	privacyLabel, _ := gtk.LabelNew("🕵️  Privacidade")
 	notebook.AppendPage(privacyBox, privacyLabel)
@@ -80,6 +87,101 @@ func (b *Browser) showSettingsDialog() {
 	}
 	
 	dialog.Destroy()
+}
+
+// createGeneralSettings cria aba de configurações gerais
+func createGeneralSettings(config *Config) *gtk.Box {
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 10)
+	box.SetMarginTop(10)
+	box.SetMarginBottom(10)
+	box.SetMarginStart(10)
+	box.SetMarginEnd(10)
+	
+	// Título
+	title, _ := gtk.LabelNew("")
+	title.SetMarkup("<b>Configurações Gerais</b>")
+	title.SetHAlign(gtk.ALIGN_START)
+	box.Add(title)
+	
+	// Navegador Padrão
+	defaultBrowserFrame, _ := gtk.FrameNew("Navegador Padrão do Sistema")
+	defaultBrowserBox, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 10)
+	defaultBrowserBox.SetMarginTop(10)
+	defaultBrowserBox.SetMarginBottom(10)
+	defaultBrowserBox.SetMarginStart(10)
+	defaultBrowserBox.SetMarginEnd(10)
+	
+	// Descrição
+	desc, _ := gtk.LabelNew("Configure o Bagus Browser como navegador padrão do sistema.\nLinks em emails, PDFs e outros aplicativos abrirão automaticamente aqui.")
+	desc.SetHAlign(gtk.ALIGN_START)
+	desc.SetLineWrap(true)
+	defaultBrowserBox.Add(desc)
+	
+	// Status atual
+	statusBox, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
+	statusBox.SetMarginTop(10)
+	
+	statusLabel, _ := gtk.LabelNew("Status:")
+	statusBox.Add(statusLabel)
+	
+	// Verificar se é navegador padrão
+	isDefault := checkIfDefaultBrowser()
+	
+	statusValue, _ := gtk.LabelNew("")
+	if isDefault {
+		statusValue.SetMarkup("<span foreground='green'>✅ Bagus Browser é o navegador padrão</span>")
+	} else {
+		statusValue.SetMarkup("<span foreground='orange'>⚠️  Outro navegador está configurado como padrão</span>")
+	}
+	statusBox.Add(statusValue)
+	
+	defaultBrowserBox.Add(statusBox)
+	
+	// Botão para definir como padrão
+	btnBox, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
+	btnBox.SetMarginTop(10)
+	
+	setDefaultBtn, _ := gtk.ButtonNewWithLabel("🌐 Definir como Navegador Padrão")
+	setDefaultBtn.Connect("clicked", func() {
+		if setAsDefaultBrowser() {
+			statusValue.SetMarkup("<span foreground='green'>✅ Bagus Browser é o navegador padrão</span>")
+			showInfoDialog("Sucesso", "Bagus Browser configurado como navegador padrão!\n\nAgora links em outros aplicativos abrirão aqui.")
+		} else {
+			showErrorDialog("Erro", "Não foi possível configurar como navegador padrão.\n\nTente manualmente nas Configurações do Sistema.")
+		}
+	})
+	
+	if isDefault {
+		setDefaultBtn.SetSensitive(false)
+		setDefaultBtn.SetLabel("✅ Já é o Navegador Padrão")
+	}
+	
+	btnBox.Add(setDefaultBtn)
+	
+	// Botão para abrir configurações do sistema
+	systemSettingsBtn, _ := gtk.ButtonNewWithLabel("⚙️  Abrir Configurações do Sistema")
+	systemSettingsBtn.Connect("clicked", func() {
+		openSystemSettings()
+	})
+	btnBox.Add(systemSettingsBtn)
+	
+	defaultBrowserBox.Add(btnBox)
+	
+	// Informação adicional
+	separator, _ := gtk.SeparatorNew(gtk.ORIENTATION_HORIZONTAL)
+	separator.SetMarginTop(10)
+	separator.SetMarginBottom(10)
+	defaultBrowserBox.Add(separator)
+	
+	infoLabel, _ := gtk.LabelNew("💡 Dica: Você também pode configurar manualmente em:\nConfigurações do Sistema → Aplicativos Padrão → Navegador Web")
+	infoLabel.SetHAlign(gtk.ALIGN_START)
+	infoLabel.SetLineWrap(true)
+	defaultBrowserBox.Add(infoLabel)
+	
+	defaultBrowserFrame.Add(defaultBrowserBox)
+	box.Add(defaultBrowserFrame)
+	
+	return box
 }
 
 // createSecuritySettings cria aba de segurança
@@ -457,4 +559,95 @@ func (b *Browser) applyConfig() {
 	}
 	
 	log.Println("⚙️  Configurações aplicadas")
+}
+
+// checkIfDefaultBrowser verifica se Bagus é o navegador padrão
+func checkIfDefaultBrowser() bool {
+	cmd := exec.Command("xdg-settings", "get", "default-web-browser")
+	output, err := cmd.Output()
+	if err != nil {
+		log.Printf("⚠️  Erro ao verificar navegador padrão: %v", err)
+		return false
+	}
+	
+	result := strings.TrimSpace(string(output))
+	isDefault := result == "bagus-browser.desktop"
+	
+	if isDefault {
+		log.Println("✅ Bagus Browser é o navegador padrão")
+	} else {
+		log.Printf("ℹ️  Navegador padrão atual: %s", result)
+	}
+	
+	return isDefault
+}
+
+// setAsDefaultBrowser configura Bagus como navegador padrão
+func setAsDefaultBrowser() bool {
+	log.Println("🌐 Configurando Bagus Browser como navegador padrão...")
+	
+	// Método 1: xdg-settings (mais confiável)
+	cmd := exec.Command("xdg-settings", "set", "default-web-browser", "bagus-browser.desktop")
+	if err := cmd.Run(); err != nil {
+		log.Printf("❌ Erro ao configurar com xdg-settings: %v", err)
+		return false
+	}
+	
+	// Método 2: xdg-mime (backup para tipos MIME específicos)
+	mimeTypes := []string{
+		"text/html",
+		"text/xml",
+		"application/xhtml+xml",
+		"x-scheme-handler/http",
+		"x-scheme-handler/https",
+	}
+	
+	for _, mimeType := range mimeTypes {
+		cmd := exec.Command("xdg-mime", "default", "bagus-browser.desktop", mimeType)
+		if err := cmd.Run(); err != nil {
+			log.Printf("⚠️  Erro ao configurar MIME %s: %v", mimeType, err)
+			// Não retornar false aqui, continuar tentando
+		}
+	}
+	
+	// Verificar se funcionou
+	if checkIfDefaultBrowser() {
+		log.Println("✅ Bagus Browser configurado como navegador padrão com sucesso!")
+		return true
+	}
+	
+	log.Println("⚠️  Configuração pode não ter funcionado completamente")
+	return false
+}
+
+// openSystemSettings abre as configurações do sistema
+func openSystemSettings() {
+	log.Println("⚙️  Abrindo configurações do sistema...")
+	
+	// Tentar diferentes comandos dependendo do ambiente desktop
+	commands := [][]string{
+		{"gnome-control-center", "default-apps"},           // GNOME
+		{"systemsettings5", "kcm_componentchooser"},        // KDE Plasma 5
+		{"systemsettings", "kcm_componentchooser"},         // KDE Plasma 4
+		{"unity-control-center", "default-apps"},           // Unity
+		{"xfce4-settings-manager"},                         // XFCE
+		{"mate-default-applications-properties"},           // MATE
+		{"lxqt-config-appearance"},                         // LXQt
+		{"gnome-control-center"},                           // GNOME (fallback)
+	}
+	
+	for _, cmdArgs := range commands {
+		cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+		if err := cmd.Start(); err == nil {
+			log.Printf("✅ Aberto: %s", cmdArgs[0])
+			return
+		}
+	}
+	
+	// Se nenhum funcionou, tentar xdg-open genérico
+	cmd := exec.Command("xdg-open", "x-scheme-handler/http")
+	if err := cmd.Start(); err != nil {
+		log.Printf("❌ Não foi possível abrir configurações do sistema: %v", err)
+		showErrorDialog("Erro", "Não foi possível abrir as configurações do sistema.\n\nAbra manualmente:\nConfigurações → Aplicativos Padrão")
+	}
 }

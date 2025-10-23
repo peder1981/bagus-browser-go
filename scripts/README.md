@@ -1,102 +1,150 @@
-# 🛠️ Scripts do Bagus Browser
+# 📁 Scripts - Bagus Browser
 
-Scripts para build, release e gerenciamento de versões.
+## ⚠️ ATENÇÃO: Sistema Atualizado!
 
----
-
-## 🚀 Workflow Simplificado (RECOMENDADO)
-
-### Criar Nova Release
-
-```bash
-# Um único comando faz tudo\!
-./scripts/version.sh release 4.5.0
-```
-
-**O que faz:**
-1. ✅ Atualiza CHANGELOG.md
-2. ✅ Cria release notes em `docs/releases/`
-3. ✅ Commita mudanças
-4. ✅ Cria tag git
-5. ✅ Compila e empacota (.deb + .tar.gz)
-6. ✅ Limpa arquivos temporários
-7. ✅ Push para GitHub
+**Os scripts antigos foram movidos para `.old/` e não devem mais ser usados.**
 
 ---
 
-## 📋 Scripts Disponíveis
+## 🎯 Novo Sistema Unificado
 
-### version.sh ⭐ NOVO\!
-Gerenciador centralizado de versões.
+Tudo agora é controlado por **UM ÚNICO SCRIPT** na raiz do projeto:
 
 ```bash
-# Ver versão atual
-./scripts/version.sh current
-
-# Criar release completa
-./scripts/version.sh release 4.5.0
+../bagus <comando>
 ```
 
-### build.sh
-Compila e empacota o browser.
+### Por que mudou?
+
+**Antes:**
+- ❌ 5+ scripts diferentes (build.sh, version.sh, release.sh, publish.sh, etc)
+- ❌ Confusão de qual script usar
+- ❌ Workflow complicado
+- ❌ Duplicação de código
+
+**Agora:**
+- ✅ 1 script master (`../bagus`)
+- ✅ Comandos claros e intuitivos
+- ✅ Workflow simplificado
+- ✅ Código centralizado
+
+---
+
+## 🚀 Como Usar
+
+### Da raiz do projeto:
 
 ```bash
-./scripts/build.sh
+# Ver ajuda
+./bagus help
+
+# Build
+./bagus build
+
+# Instalar
+./bagus install
+
+# Release completa
+./bagus release 4.5.1
+
+# Publicar
+./bagus publish-auto
+
+# Status
+./bagus status
 ```
 
-Cria:
-- `dist/bagus-browser_vX.X.X_amd64.deb`
-- `dist/bagus-browser_vX.X.X_linux_amd64.tar.gz`
-- `dist/SHA256SUMS`
-
-### release.sh
-Prepara release notes e instruções.
+### Ou use Make (wrapper):
 
 ```bash
-./scripts/release.sh
-```
-
-### publish.sh
-Build + Instalação local.
-
-```bash
-./scripts/publish.sh
+make build
+make install
+make release VERSION=4.5.1
+make publish
 ```
 
 ---
 
-## 📁 Organização de Arquivos
+## 📚 Documentação Completa
+
+Veja: `../BUILD.md`
+
+---
+
+## 🗂️ Estrutura Atual
 
 ```
 scripts/
-├── README.md           # Este arquivo
-├── version.sh          # Gerenciador de versões ⭐
-├── build.sh            # Build e empacotamento
-├── publish.sh          # Publicação local
-└── release.sh          # Preparação de release
+├── .old/              # Scripts antigos (backup)
+│   ├── build.sh
+│   ├── version.sh
+│   ├── release.sh
+│   └── publish.sh
+└── README.md          # Este arquivo
 
-dist/                   # Pacotes finais (mantido)
-├── bagus-browser_vX.X.X_amd64.deb
-├── bagus-browser_vX.X.X_linux_amd64.tar.gz
-└── SHA256SUMS
-
-build/                  # Temporário (removido após build)
-
-docs/
-├── releases/           # Release notes
-└── development/        # Documentação técnica
+../
+├── bagus              # ⭐ SCRIPT MASTER - USE ESTE!
+├── Makefile           # Wrapper para ./bagus
+└── BUILD.md           # Documentação completa
 ```
 
 ---
 
-## 🎯 Pilares do Projeto
+## 🔄 Migração
 
-1. ✅ **Organização:** Arquivos nas pastas corretas
-2. ✅ **Limpeza:** Sem lixo na raiz
-3. ✅ **Automação:** Um comando para tudo
-4. ✅ **Documentação:** Tudo documentado
+Se você estava usando os scripts antigos:
+
+**Antes:**
+```bash
+./scripts/build.sh
+./scripts/version.sh release 4.5.1
+./scripts/publish.sh
+```
+
+**Agora:**
+```bash
+./bagus build
+./bagus release 4.5.1
+./bagus publish-auto
+```
+
+Ou simplesmente:
+```bash
+./bagus release 4.5.1  # Faz tudo de uma vez!
+```
 
 ---
 
-**Atualizado em:** 22/10/2025  
-**Versão:** 4.4.0
+## 📝 Scripts Antigos
+
+Os scripts antigos estão em `.old/` apenas como backup.
+
+**NÃO USE MAIS:**
+- ❌ build.sh
+- ❌ version.sh  
+- ❌ release.sh
+- ❌ publish.sh
+- ❌ github-auth.sh
+- ❌ install-desktop-icon.sh
+
+**USE:**
+- ✅ `../bagus` (na raiz)
+
+---
+
+## 🆘 Ajuda
+
+```bash
+# Ver todos os comandos
+cd ..
+./bagus help
+
+# Ou ver documentação
+cat BUILD.md
+```
+
+---
+
+**Sistema:** Unificado  
+**Versão:** 4.5.1  
+**Data:** 23/10/2025
