@@ -49,8 +49,8 @@ show_help() {
     echo "                       Faz: version + build + tag + commit + push"
     echo ""
     echo -e "${CYAN}📤 Publicação:${NC}"
-    echo "  publish            - Publicar release no GitHub"
-    echo "  publish-auto       - Publicar última release automaticamente"
+    echo "  publish            - Instruções para publicar no GitHub (manual)"
+    echo "  publish-auto       - Mesmo que publish (instruções)"
     echo ""
     echo -e "${CYAN}🧪 Desenvolvimento:${NC}"
     echo "  test               - Testar compilação"
@@ -66,7 +66,7 @@ show_help() {
     echo "  ./bagus build                    # Apenas compilar"
     echo "  ./bagus install                  # Compilar e instalar"
     echo "  ./bagus release 4.5.1            # Release completa"
-    echo "  ./bagus publish-auto             # Publicar no GitHub"
+    echo "  ./bagus publish                  # Ver instruções de publicação"
     echo ""
 }
 
@@ -318,23 +318,8 @@ cmd_release() {
 
 # Publicar
 cmd_publish() {
-    echo -e "${BLUE}📤 Publicando no GitHub...${NC}"
-    
-    # Verificar gh CLI
-    if ! command -v gh &> /dev/null; then
-        echo -e "${RED}❌ GitHub CLI (gh) não encontrado${NC}"
-        echo ""
-        echo "Instale com:"
-        echo "  sudo apt install gh"
-        echo "  gh auth login"
-        exit 1
-    fi
-    
-    # Verificar se está autenticado
-    if ! gh auth status &> /dev/null; then
-        echo -e "${YELLOW}🔐 Autenticando no GitHub...${NC}"
-        gh auth login
-    fi
+    echo -e "${BLUE}📤 Preparando publicação no GitHub...${NC}"
+    echo ""
     
     # Verificar se há pacotes
     if [ ! -d "${DIST_DIR}" ] || [ -z "$(ls -A ${DIST_DIR})" ]; then
@@ -342,12 +327,47 @@ cmd_publish() {
         cmd_build
     fi
     
-    # Criar release
-    echo -e "${YELLOW}📝 Criando release ${CURRENT_VERSION}...${NC}"
+    echo -e "${GREEN}✅ Pacotes prontos para publicação:${NC}"
+    echo ""
+    ls -lh ${DIST_DIR}/
+    echo ""
     
-    gh release create ${CURRENT_VERSION} \
-        --title "Bagus Browser ${CURRENT_VERSION}" \
-        --notes "Release ${CURRENT_VERSION}
+    # Verificar se tag existe
+    if ! git rev-parse ${CURRENT_VERSION} >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️  Tag ${CURRENT_VERSION} não existe no Git${NC}"
+        echo -e "${YELLOW}Execute primeiro: ./bagus release ${CURRENT_VERSION#v}${NC}"
+        echo ""
+        exit 1
+    fi
+    
+    # Verificar se tag foi enviada
+    if ! git ls-remote --tags origin | grep -q "refs/tags/${CURRENT_VERSION}"; then
+        echo -e "${YELLOW}⚠️  Tag ${CURRENT_VERSION} não foi enviada para o GitHub${NC}"
+        echo -e "${YELLOW}Enviando tag...${NC}"
+        git push origin ${CURRENT_VERSION}
+        echo ""
+    fi
+    
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║  📤 Publicar Release no GitHub (Manual)                   ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${YELLOW}1. Acesse:${NC}"
+    echo "   https://github.com/peder1981/bagus-browser-go/releases/new"
+    echo ""
+    echo -e "${YELLOW}2. Preencha:${NC}"
+    echo "   Tag: ${CURRENT_VERSION}"
+    echo "   Título: Bagus Browser ${CURRENT_VERSION}"
+    echo ""
+    echo -e "${YELLOW}3. Faça upload dos arquivos:${NC}"
+    echo "   - ${DIST_DIR}/bagus-browser_${CURRENT_VERSION}_amd64.deb"
+    echo "   - ${DIST_DIR}/bagus-browser_${CURRENT_VERSION}_linux_amd64.tar.gz"
+    echo "   - ${DIST_DIR}/SHA256SUMS"
+    echo ""
+    echo -e "${YELLOW}4. Descrição sugerida:${NC}"
+    echo ""
+    cat << EOF
+Release ${CURRENT_VERSION}
 
 ## 📦 Instalação
 
@@ -367,19 +387,23 @@ sudo mv bagus-browser /usr/local/bin/
 ## ✨ Novidades
 
 Veja o CHANGELOG.md para detalhes completos.
-" \
-        ${DIST_DIR}/*.deb \
-        ${DIST_DIR}/*.tar.gz \
-        ${DIST_DIR}/SHA256SUMS
-    
+
+## 🔐 Checksums (SHA256)
+
+\`\`\`
+$(cat ${DIST_DIR}/SHA256SUMS)
+\`\`\`
+EOF
     echo ""
-    echo -e "${GREEN}✅ Publicado com sucesso!${NC}"
+    echo -e "${GREEN}5. Clique em 'Publish release'${NC}"
     echo ""
-    echo -e "${CYAN}URL:${NC} https://github.com/peder1981/bagus-browser-go/releases/tag/${CURRENT_VERSION}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo -e "${YELLOW}💡 Dica: Copie a descrição acima e cole no GitHub${NC}"
     echo ""
 }
 
-# Publicar automático
+# Publicar automático (mesmo que manual agora)
 cmd_publish_auto() {
     cmd_publish
 }
