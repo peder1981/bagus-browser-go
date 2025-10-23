@@ -19,7 +19,7 @@ NC='\033[0m'
 
 # Configurações
 APP_NAME="bagus-browser"
-CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v4.5.0")
+CURRENT_VERSION="v4.5.1"
 BUILD_DIR="build"
 DIST_DIR="dist"
 
