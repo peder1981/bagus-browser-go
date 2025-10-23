@@ -107,3 +107,21 @@ func (pm *PrivacyManager) LogPrivacyInfo() {
 	log.Println("   ✅ Do Not Track habilitado")
 	log.Println("   ✅ DuckDuckGo como motor de busca padrão")
 }
+
+// applyPrivacySettings aplica configurações de privacidade baseadas em Config
+func applyPrivacySettings(webView *C.WebKitWebView, config *Config) {
+	// Converter Config para PrivacyConfig
+	privacyConfig := &PrivacyConfig{
+		BlockThirdPartyCookies: config.BlockThirdPartyCookies,
+		BlockGeolocation:       config.BlockGeolocation,
+		BlockNotifications:     config.BlockNotifications,
+		BlockMediaAccess:       config.BlockMedia,
+		BlockWebGL:             config.BlockWebGL,
+		BlockWebAudio:          config.BlockWebAudio,
+		DNT:                    config.DoNotTrack,
+	}
+	
+	// Aplicar configurações
+	wv := &WebView{cWebView: webView}
+	ApplyPrivacyConfig(wv, privacyConfig)
+}

@@ -291,6 +291,7 @@ type Browser struct {
 	bookmarkManager *BookmarkManager
 	downloadManager *DownloadManager
 	sessionManager  *SessionManager
+	config          *Config // Configurações do usuário
 	findBar         *gtk.Box
 	findEntry       *gtk.Entry
 	findBarVisible  bool
@@ -302,7 +303,28 @@ func main() {
 
 	log.Println("🌐 Iniciando Bagus Browser...")
 
+	// Carregar configurações
+	config, err := LoadConfig()
+	if err != nil {
+		log.Fatalf("❌ Erro ao carregar configurações: %v", err)
+	}
+	log.Println("⚙️  Configurações carregadas")
+
+	// Autenticar usuário se necessário
+	if config.RequirePassword {
+		log.Println("🔒 Autenticação necessária")
+		if !authenticateUser(config) {
+			log.Println("❌ Autenticação falhou - encerrando")
+			return
+		}
+	}
+
+	// Inicializar WebContext com configurações
+	webContext := GetDefaultWebContext()
+	webContext.Initialize(config)
+
 	browser := NewBrowser()
+	browser.config = config
 	browser.Show()
 
 	log.Println("✅ Browser iniciado com WebView!")
@@ -716,6 +738,13 @@ func (b *Browser) setupKeyboardShortcuts() {
 			return true
 		}
 		
+		// Ctrl+, - Configurações
+		if ctrlPressed && keyVal == gdk.KEY_comma {
+			log.Println("⌨️  Ctrl+, - Configurações")
+			b.showSettingsDialog()
+			return true
+		}
+		
 		// Ctrl+Q - Sair
 		if ctrlPressed && keyVal == gdk.KEY_q {
 			log.Println("⌨️  Ctrl+Q - Sair")
@@ -953,6 +982,9 @@ func (b *Browser) CloseCurrentTab() {
 		// Salvar aba no histórico antes de fechar
 		tab := b.tabs[pageNum]
 		if tab.webView != nil {
+			// Parar carregamento e liberar recursos
+			stopLoading(tab.webView)
+			
 			uri := tab.webView.GetURI()
 			title := tab.webView.GetTitle()
 			
