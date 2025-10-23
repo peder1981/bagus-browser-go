@@ -1,4 +1,4 @@
-# Bagus Browser v4.4.0
+# Bagus Browser v4.5.0
 
 ## 🎉 Release
 
@@ -40,15 +40,15 @@ Browser minimalista, seguro e privado construído em Go.
 
 #### Ubuntu/Debian (.deb)
 ```bash
-wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.4.0/bagus-browser_4.4.0_amd64.deb
-sudo dpkg -i bagus-browser_4.4.0_amd64.deb
+wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.5.0/bagus-browser_4.5.0_amd64.deb
+sudo dpkg -i bagus-browser_4.5.0_amd64.deb
 sudo apt-get install -f
 ```
 
 #### Tarball
 ```bash
-wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.4.0/bagus-browser_4.4.0_linux_amd64.tar.gz
-tar -xzf bagus-browser_4.4.0_linux_amd64.tar.gz
+wget https://github.com/peder1981/bagus-browser-go/releases/download/v4.5.0/bagus-browser_4.5.0_linux_amd64.tar.gz
+tar -xzf bagus-browser_4.5.0_linux_amd64.tar.gz
 sudo mv bagus-browser /usr/local/bin/
 ```
 
@@ -60,5 +60,5 @@ sudo mv bagus-browser /usr/local/bin/
 
 ---
 
-**Data:** 2025-10-22  
-**Versão:** 4.4.0
+**Data:** 2025-10-23  
+**Versão:** 4.5.0
