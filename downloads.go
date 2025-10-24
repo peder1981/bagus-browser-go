@@ -219,10 +219,14 @@ func (dm *DownloadManager) GetUniqueFilename(filename string) string {
 
 // AddDownload adiciona um novo download
 func (dm *DownloadManager) AddDownload(id, url, filename string) *DownloadItem {
+	destination := dm.GetUniqueFilename(filename)
+	return dm.AddDownloadWithDestination(id, url, filename, destination)
+}
+
+// AddDownloadWithDestination adiciona um novo download com destino específico
+func (dm *DownloadManager) AddDownloadWithDestination(id, url, filename, destination string) *DownloadItem {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
-	
-	destination := dm.GetUniqueFilename(filename)
 	
 	item := &DownloadItem{
 		ID:          id,

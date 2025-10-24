@@ -590,8 +590,51 @@ func (b *Browser) createMenuBar() *gtk.MenuBar {
 	})
 	menuFerramentasSub.Append(itemZoomReset)
 	
+	separador3, _ := gtk.SeparatorMenuItemNew()
+	menuFerramentasSub.Append(separador3)
+	
+	itemDownloads, _ := gtk.MenuItemNewWithLabel("Downloads (Ctrl+J)")
+	itemDownloads.Connect("activate", func() {
+		if b.downloadManager != nil {
+			b.downloadManager.ShowDownloadWindow()
+		}
+	})
+	menuFerramentasSub.Append(itemDownloads)
+	
 	menuFerramentas.SetSubmenu(menuFerramentasSub)
 	menuBar.Append(menuFerramentas)
+	
+	// Menu Editar
+	menuEditar, _ := gtk.MenuItemNewWithLabel("Editar")
+	menuEditarSub, _ := gtk.MenuNew()
+	
+	itemConfiguracoes, _ := gtk.MenuItemNewWithLabel("Configurações (Ctrl+,)")
+	itemConfiguracoes.Connect("activate", func() {
+		b.showSettingsDialog()
+	})
+	menuEditarSub.Append(itemConfiguracoes)
+	
+	menuEditar.SetSubmenu(menuEditarSub)
+	menuBar.Append(menuEditar)
+	
+	// Menu Ajuda
+	menuAjuda, _ := gtk.MenuItemNewWithLabel("Ajuda")
+	menuAjudaSub, _ := gtk.MenuNew()
+	
+	itemVersao, _ := gtk.MenuItemNewWithLabel("Versão")
+	itemVersao.Connect("activate", func() {
+		b.showVersionDialog()
+	})
+	menuAjudaSub.Append(itemVersao)
+	
+	itemSobre, _ := gtk.MenuItemNewWithLabel("Sobre")
+	itemSobre.Connect("activate", func() {
+		b.showAboutDialog()
+	})
+	menuAjudaSub.Append(itemSobre)
+	
+	menuAjuda.SetSubmenu(menuAjudaSub)
+	menuBar.Append(menuAjuda)
 	
 	return menuBar
 }
@@ -776,6 +819,15 @@ func (b *Browser) setupKeyboardShortcuts() {
 		if ctrlPressed && keyVal == gdk.KEY_p {
 			log.Println("⌨️  Ctrl+P - Imprimir")
 			b.Print()
+			return true
+		}
+
+		// Ctrl+J - Downloads
+		if ctrlPressed && keyVal == gdk.KEY_j {
+			log.Println("⌨️  Ctrl+J - Downloads")
+			if b.downloadManager != nil {
+				b.downloadManager.ShowDownloadWindow()
+			}
 			return true
 		}
 
@@ -1458,4 +1510,63 @@ func (b *Browser) restoreSession() {
 // Show mostra a janela
 func (b *Browser) Show() {
 	b.window.ShowAll()
+}
+
+// showVersionDialog mostra diálogo com informações de versão
+func (b *Browser) showVersionDialog() {
+	dialog := gtk.MessageDialogNew(
+		b.window,
+		gtk.DIALOG_MODAL,
+		gtk.MESSAGE_INFO,
+		gtk.BUTTONS_OK,
+		"",
+	)
+	defer dialog.Destroy()
+	
+	dialog.SetTitle("Versão do Bagus Browser")
+	dialog.SetMarkup(fmt.Sprintf(
+		"<big><b>Bagus Browser</b></big>\n\n"+
+		"<b>Versão:</b> %s\n"+
+		"<b>Build:</b> Go %s\n"+
+		"<b>WebKit:</b> WebKit2GTK 4.0\n"+
+		"<b>GTK:</b> GTK+ 3.0\n\n"+
+		"<small>Browser minimalista, seguro e privado\n"+
+		"Zero telemetria • Zero rastreamento</small>",
+		"v4.6.0",
+		runtime.Version(),
+	))
+	
+	dialog.Run()
+}
+
+// showAboutDialog mostra diálogo sobre o browser
+func (b *Browser) showAboutDialog() {
+	dialog := gtk.MessageDialogNew(
+		b.window,
+		gtk.DIALOG_MODAL,
+		gtk.MESSAGE_INFO,
+		gtk.BUTTONS_OK,
+		"",
+	)
+	defer dialog.Destroy()
+	
+	dialog.SetTitle("Sobre o Bagus Browser")
+	dialog.SetMarkup(
+		"<big><b>🌐 Bagus Browser</b></big>\n\n"+
+		"<b>Browser minimalista, seguro e privado</b>\n\n"+
+		"<b>Características:</b>\n"+
+		"• Zero telemetria e rastreamento\n"+
+		"• Privacidade máxima por padrão\n"+
+		"• Criptografia AES-256-GCM\n"+
+		"• Gerenciamento de downloads robusto\n"+
+		"• Suporte completo a multimídia\n"+
+		"• Google Meet, YouTube Music, Netflix\n"+
+		"• Interface limpa e intuitiva\n\n"+
+		"<b>Desenvolvido com:</b>\n"+
+		"Go • GTK3 • WebKit2GTK\n\n"+
+		"<small>© 2025 Bagus Browser Team\n"+
+		"Licença: MIT</small>",
+	)
+	
+	dialog.Run()
 }

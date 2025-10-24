@@ -62,9 +62,13 @@ import "C"
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 	"sync"
 	"unsafe"
+	
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // DownloadHandler gerencia downloads do WebKit
@@ -100,15 +104,33 @@ func (dh *DownloadHandler) HandleDownload(download unsafe.Pointer) {
 	
 	log.Printf("📥 Novo download: %s", filename)
 	
+	// Mostrar diálogo para escolher onde salvar
+	done := make(chan string, 1)
+	
+	glib.IdleAdd(func() bool {
+		destination := dh.showSaveDialog(filename)
+		done <- destination
+		return false
+	})
+	
+	destination := <-done
+	
+	// Se usuário cancelou, cancelar download
+	if destination == "" {
+		log.Println("🚫 Download cancelado pelo usuário")
+		C.cancel_download(cDownload)
+		return
+	}
+	
 	// Gerar ID único para o download
 	downloadID := fmt.Sprintf("%p", download)
 	
-	// Adicionar ao gerenciador
-	item := dh.downloadManager.AddDownload(downloadID, uri, filename)
+	// Adicionar ao gerenciador com destino escolhido
+	item := dh.downloadManager.AddDownloadWithDestination(downloadID, uri, filepath.Base(destination), destination)
 	
 	// Configurar destino
-	destination := fmt.Sprintf("file://%s", item.Destination)
-	cDestination := C.CString(destination)
+	destinationURI := fmt.Sprintf("file://%s", destination)
+	cDestination := C.CString(destinationURI)
 	defer C.free(unsafe.Pointer(cDestination))
 	C.set_download_destination(cDownload, cDestination)
 	
@@ -117,11 +139,39 @@ func (dh *DownloadHandler) HandleDownload(download unsafe.Pointer) {
 	dh.activeDownloads[uintptr(download)] = item
 	dh.mu.Unlock()
 	
-	// Por enquanto, marcar como iniciado
-	// O WebKit2GTK gerencia o download automaticamente
-	// Vamos monitorar via polling ou sinais futuros
+	log.Printf("✅ Download configurado: %s → %s", filename, destination)
+}
+
+// showSaveDialog mostra diálogo para escolher onde salvar
+func (dh *DownloadHandler) showSaveDialog(suggestedFilename string) string {
+	dialog, err := gtk.FileChooserDialogNewWith2Buttons(
+		"Salvar arquivo",
+		dh.browser.window,
+		gtk.FILE_CHOOSER_ACTION_SAVE,
+		"Cancelar", gtk.RESPONSE_CANCEL,
+		"Salvar", gtk.RESPONSE_ACCEPT,
+	)
+	if err != nil {
+		log.Printf("❌ Erro ao criar diálogo: %v", err)
+		// Fallback para pasta padrão
+		return dh.downloadManager.GetUniqueFilename(suggestedFilename)
+	}
+	defer dialog.Destroy()
 	
-	log.Printf("✅ Download configurado: %s → %s", filename, item.Destination)
+	// Configurar diálogo
+	dialog.SetCurrentName(suggestedFilename)
+	dialog.SetCurrentFolder(dh.downloadManager.GetDownloadPath())
+	dialog.SetDoOverwriteConfirmation(true)
+	
+	// Mostrar e aguardar resposta
+	response := dialog.Run()
+	
+	if response == gtk.RESPONSE_ACCEPT {
+		filename := dialog.GetFilename()
+		return filename
+	}
+	
+	return ""
 }
 
 // CancelDownload cancela um download ativo
