@@ -292,6 +292,7 @@ type Browser struct {
 	privacyManager  *PrivacyManager
 	bookmarkManager *BookmarkManager
 	downloadManager *DownloadManager
+	downloadHandler *DownloadHandler
 	sessionManager  *SessionManager
 	config          *Config // Configurações do usuário
 	findBar         *gtk.Box
@@ -321,9 +322,21 @@ func main() {
 		}
 	}
 
-	// Inicializar WebContext com configurações
+	// Criar DownloadManager primeiro
+	downloadManager, err := NewDownloadManager()
+	if err != nil {
+		log.Printf("⚠️  Erro ao criar download manager: %v", err)
+	} else {
+		log.Printf("📁 Downloads: %s", downloadManager.GetDownloadPath())
+	}
+	
+	// Inicializar WebContext com configurações e pasta de downloads
 	webContext := GetDefaultWebContext()
-	webContext.Initialize(config)
+	if downloadManager != nil {
+		webContext.Initialize(config, downloadManager.GetDownloadPath())
+	} else {
+		webContext.Initialize(config, "")
+	}
 
 	browser := NewBrowser()
 	browser.config = config
@@ -838,6 +851,9 @@ func (b *Browser) NewTab(url string) {
 		return
 	}
 	
+	// Configurar suporte a multimídia (Meet, YouTube Music, etc)
+	ConfigureWebViewMultimedia(webView)
+
 	// Aplicar configurações de privacidade
 	ApplyPrivacyConfig(webView, b.privacyManager.GetConfig())
 
@@ -1180,21 +1196,6 @@ func (b *Browser) FindPrevious() {
 	}
 }
 
-// setupDownloadHandler configura o handler de downloads para um WebView
-func (b *Browser) setupDownloadHandler(webView *WebView) {
-	if b.downloadManager == nil {
-		return
-	}
-	
-	// Conectar sinal "download-started"
-	webView.widget.Connect("download-started", func(wv *gtk.Widget, download interface{}) {
-		log.Println("📥 Download iniciado!")
-		
-		// TODO: Implementar lógica de download completa
-		// Por enquanto, apenas logar
-		// O WebKit2GTK automaticamente baixa para a pasta padrão
-	})
-}
 
 // Print imprime a página atual
 func (b *Browser) Print() {
