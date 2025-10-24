@@ -110,7 +110,7 @@ Se você estava usando os scripts antigos:
 
 Ou simplesmente:
 ```bash
-./bagus release 4.5.1  # Faz tudo de uma vez!
+./bagus release 4.6.3 # Faz tudo de uma vez!
 ```
 
 ---
@@ -146,5 +146,5 @@ cat BUILD.md
 ---
 
 **Sistema:** Unificado  
-**Versão:** 4.5.1  
-**Data:** 23/10/2025
+**Versão:** 4.6.3 
+**Data:** 24/10/2025
