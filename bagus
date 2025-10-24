@@ -2,7 +2,7 @@
 #
 # 🌐 Bagus Browser - Script Master Unificado
 # Controla: Versionamento, Build, Instalação, Publicação
-# Versão: 4.6.2
+# Versão: 4.6.3
 # Autor: Bagus Browser Team
 #
 
@@ -19,7 +19,7 @@ NC='\033[0m'
 
 # Configurações
 APP_NAME="bagus-browser"
-CURRENT_VERSION="v4.6.2"
+CURRENT_VERSION="v4.6.3"
 BUILD_DIR="build"
 DIST_DIR="dist"
 

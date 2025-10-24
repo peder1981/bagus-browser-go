@@ -1538,7 +1538,7 @@ func (b *Browser) showVersionDialog() {
 		"<b>GTK:</b> GTK+ 3.0\n\n"+
 		"<small>Browser minimalista, seguro e privado\n"+
 		"Zero telemetria • Zero rastreamento</small>",
-		"v4.6.2",
+		"v4.6.3",
 		runtime.Version(),
 	))
 	
