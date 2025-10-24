@@ -340,6 +340,12 @@ func main() {
 
 	browser := NewBrowser()
 	browser.config = config
+	browser.downloadManager = downloadManager
+	
+	// Conectar handler de downloads ao WebContext (não ao WebView!)
+	if downloadManager != nil {
+		browser.setupGlobalDownloadHandler(webContext)
+	}
 	
 	// Processar argumentos de linha de comando (URLs)
 	args := os.Args[1:]

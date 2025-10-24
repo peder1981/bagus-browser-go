@@ -28,6 +28,19 @@ static void setup_multimedia_support(WebKitWebContext* context) {
     webkit_web_context_set_automation_allowed(context, TRUE);
 }
 
+// Callback para permissões de mídia
+extern gboolean goPermissionRequestCallback(WebKitPermissionRequest* request);
+
+// Callback C que chama função Go para permissões
+static gboolean permission_request_callback(WebKitWebView* webview, WebKitPermissionRequest* request, gpointer user_data) {
+    return goPermissionRequestCallback(request);
+}
+
+// Conectar handler de permissões ao WebView
+static void connect_permission_handler(WebKitWebView* webview) {
+    g_signal_connect(webview, "permission-request", G_CALLBACK(permission_request_callback), NULL);
+}
+
 // Configurar settings para WebView com suporte a multimídia
 static void configure_webview_multimedia(WebKitWebView* webview) {
     WebKitSettings* settings = webkit_web_view_get_settings(webview);
@@ -76,6 +89,19 @@ import (
 	"unsafe"
 )
 
+// goPermissionRequestCallback trata pedidos de permissão (webcam, microfone, etc)
+//export goPermissionRequestCallback
+func goPermissionRequestCallback(request *C.WebKitPermissionRequest) C.gboolean {
+	// Por enquanto, aceitar automaticamente todas as permissões
+	// TODO: Adicionar diálogo de confirmação para o usuário
+	log.Println("🔐 Permissão solicitada - concedendo automaticamente")
+	
+	// Permitir a permissão
+	C.webkit_permission_request_allow(request)
+	
+	return C.TRUE
+}
+
 // WebContext gerencia contexto global do WebKit
 type WebContext struct {
 	cContext *C.WebKitWebContext
@@ -114,7 +140,8 @@ func (wc *WebContext) Initialize(config *Config, downloadPath string) {
 // ConfigureWebViewMultimedia configura WebView com suporte robusto a multimídia
 func ConfigureWebViewMultimedia(webView *WebView) {
 	C.configure_webview_multimedia(webView.cWebView)
-	log.Println("🎥 WebView configurado para multimídia")
+	C.connect_permission_handler(webView.cWebView)
+	log.Println("🎥 WebView configurado para multimídia + permissões")
 }
 
 // setupResourceManagement configura gerenciamento de recursos para um WebView

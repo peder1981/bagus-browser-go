@@ -57,6 +57,19 @@ static void connect_download_signals(WebKitDownload* download, gpointer user_dat
     g_signal_connect(download, "failed", G_CALLBACK(on_download_failed), user_data);
 }
 
+// Variável global para armazenar callback Go
+extern void goDownloadStartedCallback(WebKitDownload* download);
+
+// Callback C que chama função Go
+static void download_started_callback(WebKitWebContext* context, WebKitDownload* download, gpointer user_data) {
+    goDownloadStartedCallback(download);
+}
+
+// Conectar handler de downloads ao contexto
+static void connect_download_handler_to_context(WebKitWebContext* context) {
+    g_signal_connect(context, "download-started", G_CALLBACK(download_started_callback), NULL);
+}
+
 */
 import "C"
 import (
@@ -67,9 +80,20 @@ import (
 	"sync"
 	"unsafe"
 	
-	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
+
+// Variável global para armazenar o handler
+var globalDownloadHandler *DownloadHandler
+
+// goDownloadStartedCallback é chamada pelo C quando um download inicia
+//export goDownloadStartedCallback
+func goDownloadStartedCallback(download *C.WebKitDownload) {
+	if globalDownloadHandler != nil {
+		log.Println("📥 Download detectado via callback C!")
+		globalDownloadHandler.HandleDownload(unsafe.Pointer(download))
+	}
+}
 
 // DownloadHandler gerencia downloads do WebKit
 type DownloadHandler struct {
@@ -216,8 +240,8 @@ func extractFilename(uri string) string {
 	return ""
 }
 
-// setupDownloadHandler configura o handler de downloads para um WebView
-func (b *Browser) setupDownloadHandler(webView *WebView) {
+// setupGlobalDownloadHandler configura o handler global de downloads no WebContext
+func (b *Browser) setupGlobalDownloadHandler(webContext *WebContext) {
 	if b.downloadManager == nil {
 		return
 	}
@@ -227,11 +251,17 @@ func (b *Browser) setupDownloadHandler(webView *WebView) {
 		b.downloadHandler = NewDownloadHandler(b, b.downloadManager)
 	}
 	
-	// Conectar sinal "download-started"
-	webView.widget.Connect("download-started", func(wv interface{}, download unsafe.Pointer) {
-		log.Println("📥 Download detectado!")
-		b.downloadHandler.HandleDownload(download)
-	})
+	// Armazenar na variável global para o callback C
+	globalDownloadHandler = b.downloadHandler
 	
-	log.Println("✅ Handler de downloads configurado")
+	// Conectar handler ao WebContext via C
+	C.connect_download_handler_to_context(webContext.cContext)
+	
+	log.Println("✅ Handler global de downloads configurado no WebContext")
+}
+
+// setupDownloadHandler mantido para compatibilidade (mas não é mais usado)
+func (b *Browser) setupDownloadHandler(webView *WebView) {
+	// Não faz nada - downloads são gerenciados globalmente pelo WebContext
+	log.Println("⚠️  setupDownloadHandler chamado (ignorado - usando handler global)")
 }
