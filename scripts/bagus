@@ -108,7 +108,7 @@ cmd_build() {
     
     # Compilar
     echo -e "${YELLOW}📝 Compilando binário...${NC}"
-    go build -ldflags="-s -w" -o ${BUILD_DIR}/${APP_NAME} .
+    go build -ldflags="-s -w" -o ${BUILD_DIR}/${APP_NAME} ./cmd/bagus-browser
     
     if [ $? -eq 0 ]; then
         SIZE=$(du -h ${BUILD_DIR}/${APP_NAME} | cut -f1)
@@ -284,15 +284,15 @@ cmd_release() {
     fi
     
     # Atualizar versão no script
-    sed -i "s/^CURRENT_VERSION=.*/CURRENT_VERSION=\"${NEW_VERSION}\"/" bagus
-    sed -i "s/^# Versão: .*/# Versão: ${NEW_VERSION#v}/" bagus
+    sed -i "s/^CURRENT_VERSION=.*/CURRENT_VERSION=\"${NEW_VERSION}\"/" scripts/bagus
+    sed -i "s/^# Versão: .*/# Versão: ${NEW_VERSION#v}/" scripts/bagus
     
     # Build
     CURRENT_VERSION=$NEW_VERSION
     cmd_build
     
     # Commit da versão
-    git add bagus
+    git add scripts/bagus
     git commit -m "🔖 Bump version to ${NEW_VERSION}" || true
     
     # Criar tag

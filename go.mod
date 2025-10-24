@@ -1,4 +1,4 @@
-module github.com/peder1981/bagus-webkit-cgo
+module github.com/peder1981/bagus-browser-go
 
 go 1.24.0
 

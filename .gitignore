@@ -4,33 +4,43 @@
 # DADOS SENSÍVEIS E PRIVADOS
 # ============================================
 
-# Tokens e credenciais
-*.token
-*.key
-*.pem
-*.p12
-*.pfx
-.env
-.env.*
-!.env.example
+# Binários
+bagus-browser
+build/bagus-browser
+dist/
+*.deb
+*.tar.gz
 
-# Cache de autenticação OAuth2
-.config/
-github_token.cache*
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
 
-# Configurações do usuário
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dados do usuário (não commitar)
 config.json
-settings.json
-user-data/
-profile/
-
-# Favoritos e histórico (dados do usuário)
-*.db
-*.sqlite
-*.sqlite3
+session.enc
+cookies.sqlite
 bookmarks.enc
-history.enc
-cookies.txt
+*.log
+*.tmp
+
+# Scripts temporários
+/tmp/
 
 # Senhas e dados criptografados
 passwords/

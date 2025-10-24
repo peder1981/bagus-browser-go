@@ -6,41 +6,41 @@
 .PHONY: help build install clean test version release publish status
 
 help:
-	@./bagus help
+	@./scripts/bagus help
 
 build:
-	@./bagus build
+	@./scripts/bagus build
 
 install:
-	@./bagus install
+	@./scripts/bagus install
 
 clean:
-	@./bagus clean
+	@./scripts/bagus clean
 
 test:
-	@./bagus test
+	@./scripts/bagus test
 
 version:
-	@./bagus version
+	@./scripts/bagus version
 
 status:
-	@./bagus status
+	@./scripts/bagus status
 
 release:
 ifdef VERSION
-	@./bagus release $(VERSION)
+	@./scripts/bagus release $(VERSION)
 else
 	@echo "❌ Erro: Especifique a versão"
 	@echo "Uso: make release VERSION=4.5.1"
-	@echo "Ou use: ./bagus release 4.5.1"
+	@echo "Ou use: ./scripts/bagus release 4.5.1"
 	@exit 1
 endif
 
 publish:
-	@./bagus publish-auto
+	@./scripts/bagus publish-auto
 
 run:
-	@./bagus run
+	@./scripts/bagus run
 
 # Atalhos para compatibilidade
 all: build

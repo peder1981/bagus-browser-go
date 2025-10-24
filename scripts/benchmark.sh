@@ -28,7 +28,7 @@ echo ""
 # Verificar se bagus-browser está instalado
 if ! command -v bagus-browser &> /dev/null; then
     echo -e "${RED}❌ bagus-browser não encontrado${NC}"
-    echo "Instale primeiro: ./bagus install"
+    echo "Instale primeiro: ./scripts/bagus install"
     exit 1
 fi
 
