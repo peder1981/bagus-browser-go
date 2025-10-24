@@ -578,3 +578,65 @@ func formatDuration(d time.Duration) string {
 	}
 	return fmt.Sprintf("%dh %dm", int(d.Hours()), int(d.Minutes())%60)
 }
+
+// UpdateProgress atualiza o progresso do download
+func (item *DownloadItem) UpdateProgress(received, total uint64) {
+	item.BytesReceived = received
+	item.TotalBytes = total
+	
+	if total > 0 {
+		item.Progress = float64(received) / float64(total)
+	}
+	
+	// Atualizar UI
+	if item.progressBar != nil {
+		item.progressBar.SetFraction(item.Progress)
+	}
+	
+	if item.statusLabel != nil {
+		status := fmt.Sprintf("%s / %s (%.0f%%)", 
+			formatBytes(received), 
+			formatBytes(total), 
+			item.Progress*100)
+		item.statusLabel.SetText(status)
+	}
+}
+
+// Complete marca o download como concluído
+func (item *DownloadItem) Complete() {
+	item.Status = "completed"
+	item.EndTime = time.Now()
+	item.Progress = 1.0
+	
+	// Atualizar UI
+	if item.progressBar != nil {
+		item.progressBar.SetFraction(1.0)
+	}
+	
+	if item.statusLabel != nil {
+		item.statusLabel.SetText("✅ Concluído")
+	}
+	
+	if item.cancelBtn != nil {
+		item.cancelBtn.SetSensitive(false)
+	}
+	
+	if item.openBtn != nil {
+		item.openBtn.SetSensitive(true)
+	}
+}
+
+// Fail marca o download como falho
+func (item *DownloadItem) Fail() {
+	item.Status = "failed"
+	item.EndTime = time.Now()
+	
+	// Atualizar UI
+	if item.statusLabel != nil {
+		item.statusLabel.SetText("❌ Falhou")
+	}
+	
+	if item.cancelBtn != nil {
+		item.cancelBtn.SetSensitive(false)
+	}
+}

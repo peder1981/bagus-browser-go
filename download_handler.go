@@ -11,6 +11,17 @@ static const char* get_download_uri(WebKitDownload* download) {
     return webkit_uri_request_get_uri(request);
 }
 
+static const char* get_download_suggested_filename(WebKitDownload* download) {
+    WebKitURIResponse* response = webkit_download_get_response(download);
+    if (response) {
+        const char* suggested = webkit_uri_response_get_suggested_filename(response);
+        if (suggested && suggested[0] != '\0') {
+            return suggested;
+        }
+    }
+    return NULL;
+}
+
 static const char* get_download_destination(WebKitDownload* download) {
     return webkit_download_get_destination(download);
 }
@@ -35,19 +46,24 @@ static void cancel_download(WebKitDownload* download) {
     webkit_download_cancel(download);
 }
 
+// Callbacks Go exportados
+extern void goDownloadReceivedData(WebKitDownload* download, guint64 data_length);
+extern void goDownloadFinished(WebKitDownload* download);
+extern void goDownloadFailed(WebKitDownload* download);
+
 // Callback para progresso
 static void on_download_received_data(WebKitDownload* download, guint64 data_length, gpointer user_data) {
-    // Callback será tratado em Go
+    goDownloadReceivedData(download, data_length);
 }
 
 // Callback para conclusão
 static void on_download_finished(WebKitDownload* download, gpointer user_data) {
-    // Callback será tratado em Go
+    goDownloadFinished(download);
 }
 
 // Callback para falha
 static void on_download_failed(WebKitDownload* download, GError* error, gpointer user_data) {
-    // Callback será tratado em Go
+    goDownloadFailed(download);
 }
 
 // Conectar sinais do download
@@ -75,12 +91,13 @@ import "C"
 import (
 	"fmt"
 	"log"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 	"unsafe"
 	
-	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -90,9 +107,103 @@ var globalDownloadHandler *DownloadHandler
 // goDownloadStartedCallback é chamada pelo C quando um download inicia
 //export goDownloadStartedCallback
 func goDownloadStartedCallback(download *C.WebKitDownload) {
-	if globalDownloadHandler != nil {
-		log.Println("📥 Download detectado via callback C!")
-		globalDownloadHandler.HandleDownload(unsafe.Pointer(download))
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("❌ PANIC no callback de download: %v", r)
+		}
+	}()
+	
+	log.Println("📥 Download detectado via callback C!")
+	
+	if globalDownloadHandler == nil {
+		log.Println("❌ globalDownloadHandler é NIL!")
+		return
+	}
+	
+	log.Println("✅ globalDownloadHandler existe, chamando HandleDownload...")
+	globalDownloadHandler.HandleDownload(unsafe.Pointer(download))
+	log.Println("✅ HandleDownload retornou")
+}
+
+// goDownloadReceivedData é chamada quando há progresso no download
+//export goDownloadReceivedData
+func goDownloadReceivedData(download *C.WebKitDownload, dataLength C.guint64) {
+	if globalDownloadHandler == nil {
+		return
+	}
+	
+	ptr := uintptr(unsafe.Pointer(download))
+	globalDownloadHandler.mu.RLock()
+	item, exists := globalDownloadHandler.activeDownloads[ptr]
+	globalDownloadHandler.mu.RUnlock()
+	
+	if !exists {
+		return
+	}
+	
+	// Obter tamanho total e recebido
+	received := uint64(C.get_download_received(download))
+	total := uint64(C.get_download_total(download))
+	
+	// Atualizar progresso
+	item.UpdateProgress(received, total)
+}
+
+// goDownloadFinished é chamada quando o download termina
+//export goDownloadFinished
+func goDownloadFinished(download *C.WebKitDownload) {
+	if globalDownloadHandler == nil {
+		return
+	}
+	
+	ptr := uintptr(unsafe.Pointer(download))
+	globalDownloadHandler.mu.RLock()
+	item, exists := globalDownloadHandler.activeDownloads[ptr]
+	globalDownloadHandler.mu.RUnlock()
+	
+	if exists {
+		item.Complete()
+		log.Printf("✅ Download concluído: %s", item.Filename)
+		
+		// Notificação desktop
+		globalDownloadHandler.showNotification(
+			"Download Concluído",
+			fmt.Sprintf("✅ %s foi baixado com sucesso!", item.Filename),
+		)
+		
+		// Remover da lista de ativos
+		globalDownloadHandler.mu.Lock()
+		delete(globalDownloadHandler.activeDownloads, ptr)
+		globalDownloadHandler.mu.Unlock()
+	}
+}
+
+// goDownloadFailed é chamada quando o download falha
+//export goDownloadFailed
+func goDownloadFailed(download *C.WebKitDownload) {
+	if globalDownloadHandler == nil {
+		return
+	}
+	
+	ptr := uintptr(unsafe.Pointer(download))
+	globalDownloadHandler.mu.RLock()
+	item, exists := globalDownloadHandler.activeDownloads[ptr]
+	globalDownloadHandler.mu.RUnlock()
+	
+	if exists {
+		item.Fail()
+		log.Printf("❌ Download falhou: %s", item.Filename)
+		
+		// Notificação desktop
+		globalDownloadHandler.showNotification(
+			"Download Falhou",
+			fmt.Sprintf("❌ Erro ao baixar %s", item.Filename),
+		)
+		
+		// Remover da lista de ativos
+		globalDownloadHandler.mu.Lock()
+		delete(globalDownloadHandler.activeDownloads, ptr)
+		globalDownloadHandler.mu.Unlock()
 	}
 }
 
@@ -115,68 +226,76 @@ func NewDownloadHandler(browser *Browser, dm *DownloadManager) *DownloadHandler 
 
 // HandleDownload processa um novo download
 func (dh *DownloadHandler) HandleDownload(download unsafe.Pointer) {
+	log.Println("🚀 HandleDownload INICIADO")
 	cDownload := (*C.WebKitDownload)(download)
 	
 	// Obter URI do download
 	cURI := C.get_download_uri(cDownload)
 	uri := C.GoString(cURI)
+	log.Printf("🔗 URI do download: %s", uri)
 	
-	// Extrair nome do arquivo da URI
-	filename := extractFilename(uri)
+	// Tentar obter nome sugerido do WebKit (Content-Disposition)
+	var filename string
+	cSuggested := C.get_download_suggested_filename(cDownload)
+	if cSuggested != nil {
+		filename = C.GoString(cSuggested)
+		log.Printf("✨ Nome sugerido pelo WebKit: %s", filename)
+	}
+	
+	// Se não tiver nome sugerido, extrair da URI
 	if filename == "" {
-		filename = "download"
+		filename = extractFilename(uri)
+		log.Printf("📝 Nome extraído da URI: %s", filename)
+	}
+	
+	// Fallback para nome genérico
+	if filename == "" || len(filename) > 100 {
+		timestamp := fmt.Sprintf("%d", time.Now().Unix())
+		filename = fmt.Sprintf("download_%s", timestamp)
+		log.Printf("⚠️  Usando nome genérico: %s", filename)
 	}
 	
 	log.Printf("📥 Novo download: %s", filename)
 	
-	// Processar diálogo de forma assíncrona para não travar o browser
+	// Gerar caminho de destino automaticamente
+	destination := dh.downloadManager.GetUniqueFilename(filename)
+	destinationURI := fmt.Sprintf("file://%s", destination)
+	
+	// Configurar destino IMEDIATAMENTE (antes de retornar do callback)
+	cDestination := C.CString(destinationURI)
+	defer C.free(unsafe.Pointer(cDestination))
+	C.set_download_destination(cDownload, cDestination)
+	
+	// Gerar ID único para o download
+	downloadID := fmt.Sprintf("%p", download)
+	
+	// Adicionar ao gerenciador
+	item := dh.downloadManager.AddDownloadWithDestination(downloadID, uri, filepath.Base(destination), destination)
+	
+	// Guardar referência
+	dh.mu.Lock()
+	dh.activeDownloads[uintptr(download)] = item
+	dh.mu.Unlock()
+	
+	// Conectar sinais
+	C.connect_download_signals(cDownload, C.gpointer(download))
+	
+	log.Printf("✅ Download iniciado: %s → %s", filename, destination)
+	
+	// Notificação de início
+	dh.showNotification(
+		"Download Iniciado",
+		fmt.Sprintf("📥 Baixando %s...", filename),
+	)
+}
+
+// showNotification mostra notificação desktop
+func (dh *DownloadHandler) showNotification(title, message string) {
+	// Usar notify-send do sistema (disponível na maioria das distros Linux)
 	go func() {
-		// Mostrar diálogo na thread principal do GTK
-		done := make(chan string, 1)
-		
-		glib.IdleAdd(func() bool {
-			destination := dh.showSaveDialog(filename)
-			done <- destination
-			return false
-		})
-		
-		destination := <-done
-		
-		// Se usuário cancelou, cancelar download
-		if destination == "" {
-			log.Println("🚫 Download cancelado pelo usuário")
-			glib.IdleAdd(func() bool {
-				C.cancel_download(cDownload)
-				return false
-			})
-			return
-		}
-		
-		// Configurar download na thread principal do GTK
-		glib.IdleAdd(func() bool {
-			// Gerar ID único para o download
-			downloadID := fmt.Sprintf("%p", download)
-			
-			// Adicionar ao gerenciador com destino escolhido
-			item := dh.downloadManager.AddDownloadWithDestination(downloadID, uri, filepath.Base(destination), destination)
-			
-			// Configurar destino
-			destinationURI := fmt.Sprintf("file://%s", destination)
-			cDestination := C.CString(destinationURI)
-			defer C.free(unsafe.Pointer(cDestination))
-			C.set_download_destination(cDownload, cDestination)
-			
-			// Guardar referência
-			dh.mu.Lock()
-			dh.activeDownloads[uintptr(download)] = item
-			dh.mu.Unlock()
-			
-			// Conectar sinais
-			C.connect_download_signals(cDownload, C.gpointer(download))
-			
-			log.Printf("✅ Download iniciado: %s → %s", filename, destination)
-			return false
-		})
+		// Executar notify-send de forma assíncrona
+		// Ignora erros se notify-send não estiver disponível
+		_ = exec.Command("notify-send", "-i", "download", title, message).Run()
 	}()
 }
 
