@@ -129,42 +129,55 @@ func (dh *DownloadHandler) HandleDownload(download unsafe.Pointer) {
 	
 	log.Printf("📥 Novo download: %s", filename)
 	
-	// Mostrar diálogo para escolher onde salvar
-	done := make(chan string, 1)
-	
-	glib.IdleAdd(func() bool {
-		destination := dh.showSaveDialog(filename)
-		done <- destination
-		return false
-	})
-	
-	destination := <-done
-	
-	// Se usuário cancelou, cancelar download
-	if destination == "" {
-		log.Println("🚫 Download cancelado pelo usuário")
-		C.cancel_download(cDownload)
-		return
-	}
-	
-	// Gerar ID único para o download
-	downloadID := fmt.Sprintf("%p", download)
-	
-	// Adicionar ao gerenciador com destino escolhido
-	item := dh.downloadManager.AddDownloadWithDestination(downloadID, uri, filepath.Base(destination), destination)
-	
-	// Configurar destino
-	destinationURI := fmt.Sprintf("file://%s", destination)
-	cDestination := C.CString(destinationURI)
-	defer C.free(unsafe.Pointer(cDestination))
-	C.set_download_destination(cDownload, cDestination)
-	
-	// Guardar referência
-	dh.mu.Lock()
-	dh.activeDownloads[uintptr(download)] = item
-	dh.mu.Unlock()
-	
-	log.Printf("✅ Download configurado: %s → %s", filename, destination)
+	// Processar diálogo de forma assíncrona para não travar o browser
+	go func() {
+		// Mostrar diálogo na thread principal do GTK
+		done := make(chan string, 1)
+		
+		glib.IdleAdd(func() bool {
+			destination := dh.showSaveDialog(filename)
+			done <- destination
+			return false
+		})
+		
+		destination := <-done
+		
+		// Se usuário cancelou, cancelar download
+		if destination == "" {
+			log.Println("🚫 Download cancelado pelo usuário")
+			glib.IdleAdd(func() bool {
+				C.cancel_download(cDownload)
+				return false
+			})
+			return
+		}
+		
+		// Configurar download na thread principal do GTK
+		glib.IdleAdd(func() bool {
+			// Gerar ID único para o download
+			downloadID := fmt.Sprintf("%p", download)
+			
+			// Adicionar ao gerenciador com destino escolhido
+			item := dh.downloadManager.AddDownloadWithDestination(downloadID, uri, filepath.Base(destination), destination)
+			
+			// Configurar destino
+			destinationURI := fmt.Sprintf("file://%s", destination)
+			cDestination := C.CString(destinationURI)
+			defer C.free(unsafe.Pointer(cDestination))
+			C.set_download_destination(cDownload, cDestination)
+			
+			// Guardar referência
+			dh.mu.Lock()
+			dh.activeDownloads[uintptr(download)] = item
+			dh.mu.Unlock()
+			
+			// Conectar sinais
+			C.connect_download_signals(cDownload, unsafe.Pointer(uintptr(download)))
+			
+			log.Printf("✅ Download iniciado: %s → %s", filename, destination)
+			return false
+		})
+	}()
 }
 
 // showSaveDialog mostra diálogo para escolher onde salvar
