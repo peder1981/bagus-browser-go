@@ -4,9 +4,9 @@
 # DADOS SENSÍVEIS E PRIVADOS
 # ============================================
 
-# Binários
-bagus-browser
-build/bagus-browser
+# Binários (apenas na raiz e em build/)
+/bagus-browser
+/build/bagus-browser
 dist/
 *.deb
 *.tar.gz
@@ -52,9 +52,9 @@ vault/
 # BUILD E COMPILAÇÃO
 # ============================================
 
-# Binários
-bagus-browser
-bagus-webkit
+# Binários (apenas na raiz e em build/)
+/bagus-browser
+/bagus-webkit
 *.exe
 *.dll
 *.so
