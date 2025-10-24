@@ -80,6 +80,7 @@ import (
 	"sync"
 	"unsafe"
 	
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
 
