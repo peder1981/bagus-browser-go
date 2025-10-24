@@ -172,7 +172,7 @@ func (dh *DownloadHandler) HandleDownload(download unsafe.Pointer) {
 			dh.mu.Unlock()
 			
 			// Conectar sinais
-			C.connect_download_signals(cDownload, unsafe.Pointer(uintptr(download)))
+			C.connect_download_signals(cDownload, C.gpointer(download))
 			
 			log.Printf("✅ Download iniciado: %s → %s", filename, destination)
 			return false
