@@ -13,8 +13,7 @@ static WebKitWebContext* get_default_context() {
 // Configurar gerenciamento de recursos para liberar quando aba fechar
 static void setup_resource_management(WebKitWebView* webview) {
     // Conectar sinal para limpar recursos quando página for destruída
-    // O WebKit já faz isso automaticamente, mas podemos forçar
-    g_signal_connect(webview, "close", G_CALLBACK(gtk_widget_destroy), NULL);
+    // O WebKit já faz isso automaticamente
 }
 
 // Parar carregamento de recursos
@@ -36,9 +35,48 @@ static gboolean permission_request_callback(WebKitWebView* webview, WebKitPermis
     return goPermissionRequestCallback(request);
 }
 
+// Callback para criar nova janela/aba
+extern WebKitWebView* goCreateCallback(WebKitWebView* webview, WebKitNavigationAction* navigation_action);
+
+// Callback C que chama função Go para criar nova janela
+static WebKitWebView* create_callback(WebKitWebView* webview, WebKitNavigationAction* navigation_action, gpointer user_data) {
+    return goCreateCallback(webview, navigation_action);
+}
+
+// Criar novo WebView relacionado ao original
+static WebKitWebView* create_related_webview(WebKitWebView* webview) {
+    // Criar novo WebView com o mesmo contexto
+    WebKitWebContext* context = webkit_web_view_get_context(webview);
+    WebKitWebView* new_webview = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(context));
+    
+    // Copiar settings do original
+    WebKitSettings* settings = webkit_web_view_get_settings(webview);
+    webkit_web_view_set_settings(new_webview, settings);
+    
+    return new_webview;
+}
+
 // Conectar handler de permissões ao WebView
 static void connect_permission_handler(WebKitWebView* webview) {
     g_signal_connect(webview, "permission-request", G_CALLBACK(permission_request_callback), NULL);
+}
+
+// Callback para decisões de navegação
+extern gboolean goDecidePolicyCallback(WebKitWebView* webview, WebKitPolicyDecision* decision, WebKitPolicyDecisionType decision_type);
+
+// Callback C para decisões de política
+static gboolean decide_policy_callback(WebKitWebView* webview, WebKitPolicyDecision* decision, WebKitPolicyDecisionType decision_type, gpointer user_data) {
+    return goDecidePolicyCallback(webview, decision, decision_type);
+}
+
+// Conectar handler de criação de janelas ao WebView
+static void connect_create_handler(WebKitWebView* webview) {
+    g_signal_connect(webview, "create", G_CALLBACK(create_callback), NULL);
+}
+
+// Conectar handler de decisões de política
+static void connect_decide_policy_handler(WebKitWebView* webview) {
+    g_signal_connect(webview, "decide-policy", G_CALLBACK(decide_policy_callback), NULL);
 }
 
 // Configurar settings para WebView com suporte a multimídia
@@ -57,6 +95,9 @@ static void configure_webview_multimedia(WebKitWebView* webview) {
     // Habilitar MediaStream (para webcam/microfone - Google Meet)
     webkit_settings_set_enable_media_stream(settings, TRUE);
     
+    // Habilitar WebRTC (RTCPeerConnection - ESSENCIAL para Google Meet)
+    webkit_settings_set_enable_webrtc(settings, TRUE);
+    
     // Habilitar EncryptedMedia (para DRM - Netflix, etc)
     webkit_settings_set_enable_encrypted_media(settings, TRUE);
     
@@ -68,6 +109,9 @@ static void configure_webview_multimedia(WebKitWebView* webview) {
     
     // Habilitar aceleração de hardware
     webkit_settings_set_hardware_acceleration_policy(settings, WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS);
+    
+    // Permitir JavaScript abrir janelas automaticamente (necessário para Google Meet)
+    webkit_settings_set_javascript_can_open_windows_automatically(settings, TRUE);
     
     // User agent moderno (compatibilidade)
     webkit_settings_set_user_agent(settings, 
@@ -99,6 +143,35 @@ func goPermissionRequestCallback(request *C.WebKitPermissionRequest) C.gboolean 
 	// Permitir a permissão
 	C.webkit_permission_request_allow(request)
 	
+	return C.TRUE
+}
+
+// goCreateCallback trata solicitações de criar nova janela (popups, Google Meet, etc)
+//export goCreateCallback
+func goCreateCallback(webview *C.WebKitWebView, navigationAction *C.WebKitNavigationAction) *C.WebKitWebView {
+	log.Println("🎆 Nova janela solicitada - criando WebView relacionado")
+	
+	// Criar novo WebView relacionado ao original
+	// Isso é necessário para popups do Google Meet funcionarem
+	newWebView := C.create_related_webview(webview)
+	
+	log.Println("✅ Novo WebView criado para popup")
+	return newWebView
+}
+
+// goDecidePolicyCallback trata decisões de navegação
+//export goDecidePolicyCallback
+func goDecidePolicyCallback(webview *C.WebKitWebView, decision *C.WebKitPolicyDecision, decisionType C.WebKitPolicyDecisionType) C.gboolean {
+	// WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION = 0
+	// WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION = 1
+	// WEBKIT_POLICY_DECISION_TYPE_RESPONSE = 2
+	
+	if decisionType == 1 { // NEW_WINDOW_ACTION
+		log.Println("🪟 Solicitação de nova janela detectada")
+	}
+	
+	// Permitir todas as navegações
+	C.webkit_policy_decision_use(decision)
 	return C.TRUE
 }
 
@@ -141,7 +214,9 @@ func (wc *WebContext) Initialize(config *Config, downloadPath string) {
 func ConfigureWebViewMultimedia(webView *WebView) {
 	C.configure_webview_multimedia(webView.cWebView)
 	C.connect_permission_handler(webView.cWebView)
-	log.Println("🎥 WebView configurado para multimídia + permissões")
+	C.connect_create_handler(webView.cWebView)
+	C.connect_decide_policy_handler(webView.cWebView)
+	log.Println("🎥 WebView configurado para multimídia + permissões + popups + navegação")
 }
 
 // setupResourceManagement configura gerenciamento de recursos para um WebView

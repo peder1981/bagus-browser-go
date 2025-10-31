@@ -53,9 +53,9 @@ func DefaultConfig() *Config {
 		BlockThirdPartyCookies: true,
 		BlockGeolocation:       true,
 		BlockNotifications:     false, // Permitir notificações
-		BlockMedia:             true,
-		BlockWebGL:             true,
-		BlockWebAudio:          true,
+		BlockMedia:             false, // Permitir câmera/microfone (Google Meet, etc)
+		BlockWebGL:             false, // Permitir WebGL (necessário para Meet)
+		BlockWebAudio:          false, // Permitir WebAudio (necessário para Meet)
 		DoNotTrack:             true,
 	}
 }

@@ -343,6 +343,10 @@ func main() {
 	browser.config = cfg
 	browser.downloadManager = downloadManager
 	
+	// Atualizar PrivacyManager com configurações do arquivo
+	browser.privacyManager = NewPrivacyManagerFromConfig(cfg)
+	browser.privacyManager.LogPrivacyInfo()
+	
 	// Conectar handler de downloads ao WebContext (não ao WebView!)
 	if downloadManager != nil {
 		browser.setupGlobalDownloadHandler(webContext)
