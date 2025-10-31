@@ -19,9 +19,10 @@ NC='\033[0m'
 
 # Configurações
 APP_NAME="bagus-browser"
-CURRENT_VERSION="v4.6.3"
+CURRENT_VERSION="v5.0.0"
 BUILD_DIR="build"
 DIST_DIR="dist"
+SOURCE_DIR="cmd/bagus-browser-v5"
 
 # Banner
 show_banner() {
@@ -74,19 +75,49 @@ show_help() {
 check_dependencies() {
     local missing=0
     
+    # Verificar Go (>= 1.21)
     if ! command -v go &> /dev/null; then
         echo -e "${RED}❌ Go não encontrado${NC}"
         missing=1
+    else
+        GO_VERSION=$(go version | grep -oP 'go\K[0-9]+\.[0-9]+' | head -1)
+        GO_MAJOR=$(echo $GO_VERSION | cut -d. -f1)
+        GO_MINOR=$(echo $GO_VERSION | cut -d. -f2)
+        
+        if [ "$GO_MAJOR" -lt 1 ] || ([ "$GO_MAJOR" -eq 1 ] && [ "$GO_MINOR" -lt 21 ]); then
+            echo -e "${RED}❌ Go $GO_VERSION encontrado, mas é necessário >= 1.21${NC}"
+            missing=1
+        else
+            echo -e "${GREEN}✓ Go $GO_VERSION${NC}"
+        fi
     fi
     
+    # Verificar GTK3 (>= 3.0)
     if ! pkg-config --exists gtk+-3.0; then
         echo -e "${RED}❌ GTK3 não encontrado${NC}"
         missing=1
+    else
+        GTK_VERSION=$(pkg-config --modversion gtk+-3.0)
+        if pkg-config --atleast-version=3.0 gtk+-3.0; then
+            echo -e "${GREEN}✓ GTK3 $GTK_VERSION${NC}"
+        else
+            echo -e "${RED}❌ GTK3 $GTK_VERSION encontrado, mas é necessário >= 3.0${NC}"
+            missing=1
+        fi
     fi
     
+    # Verificar WebKit2GTK (>= 2.0)
     if ! pkg-config --exists webkit2gtk-4.0; then
         echo -e "${RED}❌ WebKit2GTK não encontrado${NC}"
         missing=1
+    else
+        WEBKIT_VERSION=$(pkg-config --modversion webkit2gtk-4.0)
+        if pkg-config --atleast-version=2.0 webkit2gtk-4.0; then
+            echo -e "${GREEN}✓ WebKit2GTK $WEBKIT_VERSION${NC}"
+        else
+            echo -e "${RED}❌ WebKit2GTK $WEBKIT_VERSION encontrado, mas é necessário >= 2.0${NC}"
+            missing=1
+        fi
     fi
     
     if [ $missing -eq 1 ]; then
@@ -107,8 +138,8 @@ cmd_build() {
     mkdir -p ${BUILD_DIR} ${DIST_DIR}
     
     # Compilar
-    echo -e "${YELLOW}📝 Compilando binário...${NC}"
-    go build -ldflags="-s -w" -o ${BUILD_DIR}/${APP_NAME} ./cmd/bagus-browser
+    echo -e "${YELLOW}📝 Compilando binário v5.0.0...${NC}"
+    go build -ldflags="-s -w" -o ${BUILD_DIR}/${APP_NAME} ./${SOURCE_DIR}
     
     if [ $? -eq 0 ]; then
         SIZE=$(du -h ${BUILD_DIR}/${APP_NAME} | cut -f1)
