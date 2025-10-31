@@ -237,10 +237,31 @@ static void on_url_activate(GtkEntry *entry, gpointer data) {
 
 static void on_title_changed(WebKitWebView *webview, GParamSpec *pspec, gpointer data) {
     const char *title = webkit_web_view_get_title(webview);
-    if (title && app_data && app_data->window) {
-        char window_title[512];
-        snprintf(window_title, sizeof(window_title), "%s - Bagus Browser v5.0.0", title);
-        gtk_window_set_title(app_data->window, window_title);
+    if (!title || strlen(title) == 0) {
+        title = "Nova Aba";
+    }
+    
+    if (app_data && app_data->notebook) {
+        // Atualizar label da aba
+        int n_pages = gtk_notebook_get_n_pages(app_data->notebook);
+        for (int i = 0; i < n_pages; i++) {
+            GtkWidget *page = gtk_notebook_get_nth_page(app_data->notebook, i);
+            if (page == GTK_WIDGET(webview)) {
+                GtkWidget *label = gtk_label_new(title);
+                gtk_notebook_set_tab_label(app_data->notebook, page, label);
+                gtk_widget_show(label);
+                break;
+            }
+        }
+        
+        // Atualizar título da janela se for a aba ativa
+        int current = gtk_notebook_get_current_page(app_data->notebook);
+        GtkWidget *current_page = gtk_notebook_get_nth_page(app_data->notebook, current);
+        if (current_page == GTK_WIDGET(webview) && app_data->window) {
+            char window_title[512];
+            snprintf(window_title, sizeof(window_title), "%s - Bagus Browser", title);
+            gtk_window_set_title(app_data->window, window_title);
+        }
     }
 }
 
@@ -278,6 +299,27 @@ static void show_settings_dialog();
 extern void ShowAddBookmarkDialog(void *window, void *url, void *title);
 extern void ShowBookmarksDialog(void *window);
 
+// Forward declarations para autenticação - implementado em auth.go
+extern int ShowPasswordDialog(void *window);
+extern void ShowSetPasswordDialog(void *window);
+extern void ShowChangePasswordDialog(void *window);
+extern void ShowRemovePasswordDialog(void *window);
+
+// Forward declarations para sessão - implementado em session_ui.go
+extern void SaveCurrentSession(void *notebook);
+extern int RestoreSession();
+extern char* GetRestoredTabURL(int index);
+extern char* GetRestoredTabTitle(int index);
+extern int IsRestoredTabActive(int index);
+
+// Callback para salvar sessão ao fechar
+static void on_window_destroy(GtkWidget *widget, gpointer data) {
+    g_print("💾 Salvando sessão antes de fechar...\n");
+    if (app_data && app_data->notebook) {
+        SaveCurrentSession(app_data->notebook);
+    }
+}
+
 // Handler de atalhos de teclado
 static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data) {
     guint keyval = event->keyval;
@@ -300,6 +342,9 @@ static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer dat
     if (ctrl && !shift && (keyval == GDK_KEY_t || keyval == GDK_KEY_T)) {
         g_print("⌨️  Ctrl+T - Nova aba\n");
         new_tab("https://duckduckgo.com");
+        // Focar na URL bar
+        gtk_widget_grab_focus(GTK_WIDGET(app_data->url_entry));
+        gtk_editable_select_region(GTK_EDITABLE(app_data->url_entry), 0, -1);
         return TRUE;
     }
     
@@ -531,21 +576,44 @@ static void show_settings_dialog() {
     gtk_box_pack_start(GTK_BOX(security_box), security_title, FALSE, FALSE, 0);
     
     GtkWidget *password_frame = gtk_frame_new("🔒 Senha Mestre");
-    GtkWidget *password_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-    gtk_container_set_border_width(GTK_CONTAINER(password_box), 10);
-    
-    GtkWidget *password_check = gtk_check_button_new_with_label("Exigir senha ao abrir o browser");
-    gtk_box_pack_start(GTK_BOX(password_box), password_check, FALSE, FALSE, 0);
+    GtkWidget *password_inner = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(password_inner), 10);
     
     GtkWidget *password_desc = gtk_label_new(
-        "Protege o acesso ao browser com senha mestre.\n"
-        "Todos os dados (favoritos, sessões, cookies) são criptografados."
+        "Proteja o acesso ao browser com uma senha mestre.\n"
+        "Todos os seus dados (favoritos, sessões, cookies) já estão criptografados."
     );
     gtk_widget_set_halign(password_desc, GTK_ALIGN_START);
     gtk_label_set_line_wrap(GTK_LABEL(password_desc), TRUE);
-    gtk_box_pack_start(GTK_BOX(password_box), password_desc, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(password_inner), password_desc, FALSE, FALSE, 0);
     
-    gtk_container_add(GTK_CONTAINER(password_frame), password_box);
+    // Botões de gerenciamento de senha
+    GtkWidget *button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_widget_set_halign(button_box, GTK_ALIGN_START);
+    
+    GtkWidget *set_pwd_btn = gtk_button_new_with_label("Definir Senha");
+    GtkWidget *change_pwd_btn = gtk_button_new_with_label("Alterar Senha");
+    GtkWidget *remove_pwd_btn = gtk_button_new_with_label("Remover Senha");
+    
+    g_signal_connect_swapped(set_pwd_btn, "clicked", G_CALLBACK(ShowSetPasswordDialog), app_data->window);
+    g_signal_connect_swapped(change_pwd_btn, "clicked", G_CALLBACK(ShowChangePasswordDialog), app_data->window);
+    g_signal_connect_swapped(remove_pwd_btn, "clicked", G_CALLBACK(ShowRemovePasswordDialog), app_data->window);
+    
+    gtk_box_pack_start(GTK_BOX(button_box), set_pwd_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(button_box), change_pwd_btn, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(button_box), remove_pwd_btn, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(password_inner), button_box, FALSE, FALSE, 5);
+    
+    GtkWidget *password_info = gtk_label_new(
+        "\n💡 Dica: A senha será solicitada ao iniciar o browser.\n"
+        "Se você esquecer a senha, não será possível recuperar os dados."
+    );
+    gtk_widget_set_halign(password_info, GTK_ALIGN_START);
+    gtk_label_set_line_wrap(GTK_LABEL(password_info), TRUE);
+    gtk_box_pack_start(GTK_BOX(password_inner), password_info, FALSE, FALSE, 0);
+    
+    gtk_container_add(GTK_CONTAINER(password_frame), password_inner);
     gtk_box_pack_start(GTK_BOX(security_box), password_frame, FALSE, FALSE, 0);
     
     GtkWidget *security_label = gtk_label_new("🔒 Segurança");
@@ -890,6 +958,9 @@ static void create_ui() {
     gtk_window_set_title(app_data->window, "Bagus Browser v5.0.0");
     gtk_window_set_default_size(app_data->window, 1200, 800);
     
+    // Conectar callback para salvar sessão ao fechar
+    g_signal_connect(app_data->window, "destroy", G_CALLBACK(on_window_destroy), NULL);
+    
     // Definir ícone da aplicação
     GError *error = NULL;
     const char *icon_paths[] = {
@@ -969,8 +1040,36 @@ static void create_ui() {
     // Mostrar todos os widgets (GTK3)
     gtk_widget_show_all(GTK_WIDGET(app_data->window));
     
-    // Criar primeira aba
-    new_tab("https://duckduckgo.com");
+    // Restaurar sessão anterior ou criar aba padrão
+    int restored_count = RestoreSession();
+    
+    if (restored_count > 0) {
+        g_print("📂 Restaurando %d abas da sessão anterior...\n", restored_count);
+        
+        int active_index = 0;
+        for (int i = 0; i < restored_count; i++) {
+            char *url = GetRestoredTabURL(i);
+            if (url) {
+                new_tab(url);
+                
+                // Verificar se esta é a aba ativa
+                if (IsRestoredTabActive(i)) {
+                    active_index = i;
+                }
+                
+                free(url);
+            }
+        }
+        
+        // Ativar a aba que estava ativa
+        if (active_index > 0) {
+            gtk_notebook_set_current_page(app_data->notebook, active_index);
+        }
+    } else {
+        // Nenhuma sessão anterior, criar aba padrão
+        g_print("🆕 Criando nova sessão...\n");
+        new_tab("https://duckduckgo.com");
+    }
 }
 
 // Callback de ativação
@@ -980,6 +1079,22 @@ static void on_activate(GtkApplication *app, gpointer user_data) {
         app_data->app = app;
         app_data->tab_count = 0;
     }
+    
+    // Criar janela temporária para diálogo de senha
+    GtkWindow *temp_window = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
+    
+    // Verificar senha mestre (se habilitada)
+    int auth_result = ShowPasswordDialog(temp_window);
+    
+    gtk_widget_destroy(GTK_WIDGET(temp_window));
+    
+    if (auth_result == 0) {
+        // Autenticação falhou ou foi cancelada
+        g_print("❌ Autenticação cancelada ou falhou. Encerrando...\n");
+        g_application_quit(G_APPLICATION(app));
+        return;
+    }
+    
     create_ui();
 }
 
@@ -1010,6 +1125,9 @@ const (
 	AppVersion = "5.0.0"
 	AppName    = "Bagus Browser"
 )
+
+// Variável global para gerenciamento de sessão
+var globalSessionManager *SessionManager
 
 // Tab representa uma aba do navegador
 type Tab struct {
@@ -1075,6 +1193,27 @@ func main() {
 		log.Printf("⚠️  Erro ao carregar configurações: %v (usando padrões)", err)
 	} else {
 		log.Println("⚙️  Configurações carregadas")
+	}
+
+	// Inicializar sistema de autenticação
+	globalAuthManager, err = NewAuthManager()
+	if err != nil {
+		log.Printf("⚠️  Erro ao inicializar autenticação: %v", err)
+	} else {
+		log.Println("🔒 Sistema de autenticação inicializado")
+	}
+
+	// Inicializar sistema de sessão
+	globalCrypto, err := NewCryptoManager("")
+	if err != nil {
+		log.Printf("⚠️  Erro ao criar crypto manager: %v", err)
+	}
+	
+	globalSessionManager, err = NewSessionManager(globalCrypto)
+	if err != nil {
+		log.Printf("⚠️  Erro ao inicializar sessão: %v", err)
+	} else {
+		log.Println("💾 Sistema de sessão inicializado")
 	}
 
 	// Inicializar sistema de favoritos
