@@ -191,30 +191,10 @@ func (dm *DownloadManager) SetDownloadPath(path string) error {
 	return nil
 }
 
-// GetUniqueFilename retorna um nome de arquivo único
+// GetUniqueFilename retorna o caminho do arquivo (sempre com nome original)
 func (dm *DownloadManager) GetUniqueFilename(filename string) string {
-	fullPath := filepath.Join(dm.downloadPath, filename)
-	
-	// Se arquivo não existe, retornar como está
-	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-		return fullPath
-	}
-	
-	// Arquivo existe, adicionar número
-	ext := filepath.Ext(filename)
-	name := filename[:len(filename)-len(ext)]
-	
-	for i := 1; i < 1000; i++ {
-		newFilename := fmt.Sprintf("%s (%d)%s", name, i, ext)
-		fullPath = filepath.Join(dm.downloadPath, newFilename)
-		
-		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-			return fullPath
-		}
-	}
-	
-	// Fallback
-	return filepath.Join(dm.downloadPath, fmt.Sprintf("%s_%d%s", name, os.Getpid(), ext))
+	// Sempre retornar o nome original, sem renomear
+	return filepath.Join(dm.downloadPath, filename)
 }
 
 // AddDownload adiciona um novo download

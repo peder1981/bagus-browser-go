@@ -713,6 +713,18 @@ func (b *Browser) setupKeyboardShortcuts() {
 		altPressed := (state & uint(gdk.MOD1_MASK)) != 0
 		shiftPressed := (state & uint(gdk.SHIFT_MASK)) != 0
 
+		// Debug: Log de teclas especiais
+		if ctrlPressed || altPressed || shiftPressed {
+			log.Printf("🔍 DEBUG: keyVal=%d, Ctrl=%v, Alt=%v, Shift=%v", keyVal, ctrlPressed, altPressed, shiftPressed)
+		}
+
+		// Ctrl+Shift+B - Gerenciar favoritos (ANTES de outros atalhos)
+		if ctrlPressed && shiftPressed && (keyVal == gdk.KEY_b || keyVal == gdk.KEY_B) {
+			log.Println("⌨️  Ctrl+Shift+B - Gerenciar favoritos")
+			b.ShowBookmarks()
+			return true
+		}
+
 		// Ctrl+Shift+T - Reabrir última aba fechada (ANTES de Ctrl+T)
 		if ctrlPressed && shiftPressed && (keyVal == gdk.KEY_t || keyVal == gdk.KEY_T) {
 			log.Println("⌨️  Ctrl+Shift+T - Reabrir última aba fechada")
@@ -756,14 +768,14 @@ func (b *Browser) setupKeyboardShortcuts() {
 		}
 
 		// Ctrl+R - Recarregar
-		if ctrlPressed && keyVal == gdk.KEY_r {
+		if ctrlPressed && (keyVal == gdk.KEY_r || keyVal == gdk.KEY_R) {
 			log.Println("⌨️  Ctrl+R - Recarregar")
 			b.Reload()
 			return true
 		}
 
 		// Ctrl+L - Focar URL
-		if ctrlPressed && keyVal == gdk.KEY_l {
+		if ctrlPressed && (keyVal == gdk.KEY_l || keyVal == gdk.KEY_L) {
 			log.Println("⌨️  Ctrl+L - Focar URL")
 			b.urlEntry.GrabFocus()
 			b.urlEntry.SelectRegion(0, -1)
@@ -792,7 +804,7 @@ func (b *Browser) setupKeyboardShortcuts() {
 		}
 
 		// Ctrl+F - Buscar na página
-		if ctrlPressed && keyVal == gdk.KEY_f {
+		if ctrlPressed && (keyVal == gdk.KEY_f || keyVal == gdk.KEY_F) {
 			log.Println("⌨️  Ctrl+F - Buscar na página")
 			b.ShowFindBar()
 			return true
@@ -820,32 +832,28 @@ func (b *Browser) setupKeyboardShortcuts() {
 		}
 
 		// Ctrl+D - Adicionar favorito
-		if ctrlPressed && keyVal == gdk.KEY_d {
+		if ctrlPressed && (keyVal == gdk.KEY_d || keyVal == gdk.KEY_D) {
 			log.Println("⌨️  Ctrl+D - Adicionar favorito")
 			b.AddBookmark()
 			return true
 		}
 
 		// Ctrl+P - Imprimir
-		if ctrlPressed && keyVal == gdk.KEY_p {
+		if ctrlPressed && (keyVal == gdk.KEY_p || keyVal == gdk.KEY_P) {
 			log.Println("⌨️  Ctrl+P - Imprimir")
 			b.Print()
 			return true
 		}
 
 		// Ctrl+J - Downloads
-		if ctrlPressed && keyVal == gdk.KEY_j {
+		if ctrlPressed && !shiftPressed && (keyVal == gdk.KEY_j || keyVal == gdk.KEY_J) {
 			log.Println("⌨️  Ctrl+J - Downloads")
 			if b.downloadManager != nil {
+				log.Println("📥 Abrindo janela de downloads...")
 				b.downloadManager.ShowDownloadWindow()
+			} else {
+				log.Println("⚠️  Download manager é nil")
 			}
-			return true
-		}
-
-		// Ctrl+Shift+B - Gerenciar favoritos
-		if ctrlPressed && shiftPressed && (keyVal == gdk.KEY_b || keyVal == gdk.KEY_B) {
-			log.Println("⌨️  Ctrl+Shift+B - Gerenciar favoritos")
-			b.ShowBookmarks()
 			return true
 		}
 		
@@ -857,7 +865,7 @@ func (b *Browser) setupKeyboardShortcuts() {
 		}
 		
 		// Ctrl+Q - Sair
-		if ctrlPressed && keyVal == gdk.KEY_q {
+		if ctrlPressed && (keyVal == gdk.KEY_q || keyVal == gdk.KEY_Q) {
 			log.Println("⌨️  Ctrl+Q - Sair")
 			gtk.MainQuit()
 			return true
@@ -1316,11 +1324,14 @@ func (b *Browser) AddBookmark() {
 
 // ShowBookmarks mostra gerenciador de favoritos
 func (b *Browser) ShowBookmarks() {
+	log.Println("📚 ShowBookmarks() chamado")
+	
 	if b.bookmarkManager == nil {
 		log.Println("⚠️  Bookmark manager não disponível")
 		return
 	}
 	
+	log.Println("📚 Criando diálogo de favoritos...")
 	dialog, _ := gtk.DialogNew()
 	dialog.SetTitle("Favoritos")
 	dialog.SetTransientFor(b.window)
@@ -1330,31 +1341,51 @@ func (b *Browser) ShowBookmarks() {
 	// Criar lista
 	scrolled, _ := gtk.ScrolledWindowNew(nil, nil)
 	listBox, _ := gtk.ListBoxNew()
+	listBox.SetActivateOnSingleClick(false) // Requer duplo clique
 	scrolled.Add(listBox)
+	
+	// Handler para duplo clique na linha
+	listBox.Connect("row-activated", func(lb *gtk.ListBox, row *gtk.ListBoxRow) {
+		index := row.GetIndex()
+		bookmarks := b.bookmarkManager.GetAll()
+		if index >= 0 && index < len(bookmarks) {
+			url := bookmarks[index].URL
+			log.Printf("📖 Abrindo favorito: %s", url)
+			b.NewTab(url)
+			dialog.Destroy()
+		}
+	})
 	
 	// Adicionar favoritos
 	bookmarks := b.bookmarkManager.GetAll()
 	for _, bookmark := range bookmarks {
 		row, _ := gtk.ListBoxRowNew()
 		box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
+		box.SetMarginTop(5)
+		box.SetMarginBottom(5)
+		box.SetMarginStart(10)
+		box.SetMarginEnd(10)
 		
 		// Título
 		label, _ := gtk.LabelNew(bookmark.Title)
 		label.SetHAlign(gtk.ALIGN_START)
+		label.SetEllipsize(3) // Truncar texto longo
 		box.PackStart(label, true, true, 5)
 		
 		// Botão abrir
 		btnOpen, _ := gtk.ButtonNewWithLabel("Abrir")
 		url := bookmark.URL
 		btnOpen.Connect("clicked", func() {
+			log.Printf("📖 Abrindo favorito via botão: %s", url)
 			b.NewTab(url)
-			dialog.Close()
+			dialog.Destroy()
 		})
 		box.PackStart(btnOpen, false, false, 5)
 		
 		// Botão remover
 		btnRemove, _ := gtk.ButtonNewWithLabel("Remover")
 		btnRemove.Connect("clicked", func() {
+			log.Printf("🗑️  Removendo favorito: %s", url)
 			if err := b.bookmarkManager.Remove(url); err != nil {
 				log.Printf("❌ Erro ao remover: %v", err)
 			}
@@ -1543,7 +1574,7 @@ func (b *Browser) showVersionDialog() {
 		"<b>GTK:</b> GTK+ 3.0\n\n"+
 		"<small>Browser minimalista, seguro e privado\n"+
 		"Zero telemetria • Zero rastreamento</small>",
-		"v4.6.3",
+		"v5.0.0",
 		runtime.Version(),
 	))
 	

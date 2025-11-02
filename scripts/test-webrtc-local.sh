@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Matar qualquer instância antiga
-pkill -9 -f bagus-browser-v5 2>/dev/null
+pkill -9 -f bagus-browser 2>/dev/null
 
 echo "🔨 Recompilando..."
-go build -o build/bagus-browser-v5 ./cmd/bagus-browser-v5
+./bagus build
 
 if [ $? -ne 0 ]; then
     echo "❌ Erro na compilação!"
@@ -24,7 +24,11 @@ echo ""
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-export LD_LIBRARY_PATH=/opt/webkitgtk-webrtc/lib:$LD_LIBRARY_PATH
+# Configurar variáveis de ambiente para WebKit compilado
+if [ -d "/opt/webkitgtk-webrtc" ]; then
+    export LD_LIBRARY_PATH="/opt/webkitgtk-webrtc/lib:$LD_LIBRARY_PATH"
+    export PKG_CONFIG_PATH="/opt/webkitgtk-webrtc/lib/pkgconfig:$PKG_CONFIG_PATH"
+fi
 
 # Abrir direto no arquivo de teste
-./build/bagus-browser-v5
+./build/bagus-browser

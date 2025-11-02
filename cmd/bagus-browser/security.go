@@ -41,9 +41,24 @@ func (v *URLValidator) ValidateAndSanitize(input string) (string, error) {
 
 // isURL detecta se o input parece uma URL
 func (v *URLValidator) isURL(input string) bool {
-	// Tem protocolo
-	if strings.HasPrefix(input, "http://") || strings.HasPrefix(input, "https://") {
-		return true
+	// Protocolos suportados (RFC 3986 + protocolos históricos)
+	supportedProtocols := []string{
+		// Protocolos modernos
+		"http://", "https://", "file://", "ftp://", "ftps://",
+		"ws://", "wss://", "data:", "mailto:", "tel:",
+		// Protocolos históricos e alternativos
+		"gopher://", "gemini://", "ipfs://", "ipns://",
+		"sftp://", "ssh://", "git://", "svn://",
+		"rtmp://", "rtmps://", "rtsp://", "mms://",
+		"news://", "nntp://", "telnet://", "irc://",
+		"ircs://", "xmpp://", "sip://", "sips://",
+		"magnet:", "bitcoin:", "ethereum:",
+	}
+	
+	for _, proto := range supportedProtocols {
+		if strings.HasPrefix(input, proto) {
+			return true
+		}
 	}
 	
 	// Tem ponto e não tem espaços (provavelmente domínio)
@@ -61,8 +76,35 @@ func (v *URLValidator) isURL(input string) bool {
 
 // validateURL valida uma URL
 func (v *URLValidator) validateURL(input string) (string, error) {
-	// Adicionar https:// se não tiver protocolo
-	if !strings.HasPrefix(input, "http://") && !strings.HasPrefix(input, "https://") {
+	// Protocolos suportados (RFC 3986 + protocolos históricos)
+	supportedSchemes := map[string]bool{
+		// Protocolos modernos
+		"http": true, "https": true, "file": true, "ftp": true, "ftps": true,
+		"ws": true, "wss": true, "data": true, "mailto": true, "tel": true,
+		// Protocolos históricos e alternativos
+		"gopher": true, "gemini": true, "ipfs": true, "ipns": true,
+		"sftp": true, "ssh": true, "git": true, "svn": true,
+		"rtmp": true, "rtmps": true, "rtsp": true, "mms": true,
+		"news": true, "nntp": true, "telnet": true, "irc": true,
+		"ircs": true, "xmpp": true, "sip": true, "sips": true,
+		"magnet": true, "bitcoin": true, "ethereum": true,
+	}
+	
+	// Detectar protocolo existente
+	var detectedScheme string
+	for proto := range supportedSchemes {
+		if strings.HasPrefix(input, proto+"://") {
+			detectedScheme = proto
+			break
+		}
+		if strings.HasPrefix(input, proto+":") && proto != "http" && proto != "https" {
+			detectedScheme = proto
+			break
+		}
+	}
+	
+	// Se não tem protocolo, adicionar https://
+	if detectedScheme == "" {
 		input = "https://" + input
 	}
 	
@@ -73,18 +115,28 @@ func (v *URLValidator) validateURL(input string) (string, error) {
 	}
 	
 	// Validar scheme
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return "", fmt.Errorf("protocolo não suportado: %s (use http ou https)", u.Scheme)
+	if !supportedSchemes[u.Scheme] {
+		return "", fmt.Errorf("protocolo não suportado: %s", u.Scheme)
 	}
 	
-	// Validar host
-	if u.Host == "" {
-		return "", fmt.Errorf("host inválido")
+	// Validar host (não é necessário para file://, data:, mailto:, tel:, magnet:, bitcoin:, ethereum:)
+	requiresHost := map[string]bool{
+		"http": true, "https": true, "ftp": true, "ftps": true, "ws": true, "wss": true,
+		"gopher": true, "gemini": true, "sftp": true, "ssh": true, "git": true, "svn": true,
+		"rtmp": true, "rtmps": true, "rtsp": true, "mms": true, "news": true, "nntp": true,
+		"telnet": true, "irc": true, "ircs": true, "xmpp": true, "sip": true, "sips": true,
+		"ipfs": true, "ipns": true,
 	}
 	
-	// Verificar se domínio está bloqueado
-	if v.isDomainBlocked(u.Host) {
-		return "", fmt.Errorf("domínio bloqueado: %s", u.Host)
+	if requiresHost[u.Scheme] {
+		if u.Host == "" {
+			return "", fmt.Errorf("host inválido para protocolo %s", u.Scheme)
+		}
+		
+		// Verificar se domínio está bloqueado
+		if v.isDomainBlocked(u.Host) {
+			return "", fmt.Errorf("domínio bloqueado: %s", u.Host)
+		}
 	}
 	
 	return u.String(), nil

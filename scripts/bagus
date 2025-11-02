@@ -2,7 +2,7 @@
 #
 # 🌐 Bagus Browser - Script Master Unificado
 # Controla: Versionamento, Build, Instalação, Publicação
-# Versão: 4.6.3
+# Versão: 5.0.0
 # Autor: Bagus Browser Team
 #
 
@@ -22,7 +22,7 @@ APP_NAME="bagus-browser"
 CURRENT_VERSION="v5.0.0"
 BUILD_DIR="build"
 DIST_DIR="dist"
-SOURCE_DIR="cmd/bagus-browser-v5"
+SOURCE_DIR="cmd/bagus-browser"
 
 # Banner
 show_banner() {
@@ -131,13 +131,36 @@ check_dependencies() {
 # Build
 cmd_build() {
     echo -e "${BLUE}🔨 Compilando Bagus Browser...${NC}"
+    
+    # Configurar variáveis de ambiente para WebKit com WebRTC ANTES de check_dependencies
+    if [ -d "/opt/webkitgtk-webrtc" ]; then
+        # Detectar qual versão do WebKit foi compilada (GTK3 ou GTK4)
+        if [ -f "/opt/webkitgtk-webrtc/lib/pkgconfig/webkitgtk-6.0.pc" ]; then
+            # GTK4 + WebRTC
+            export PKG_CONFIG_PATH="/opt/webkitgtk-webrtc/lib/pkgconfig:$PKG_CONFIG_PATH"
+            export LD_LIBRARY_PATH="/opt/webkitgtk-webrtc/lib:$LD_LIBRARY_PATH"
+            export CGO_CFLAGS="-I/opt/webkitgtk-webrtc/include"
+            export CGO_LDFLAGS="-L/opt/webkitgtk-webrtc/lib"
+            echo -e "${CYAN}🔧 Usando WebKit GTK4 compilado com WebRTC (/opt/webkitgtk-webrtc)${NC}"
+        elif [ -f "/opt/webkitgtk-webrtc/lib/pkgconfig/webkit2gtk-4.0.pc" ]; then
+            # GTK3 + WebRTC
+            export PKG_CONFIG_PATH="/opt/webkitgtk-webrtc/lib/pkgconfig:$PKG_CONFIG_PATH"
+            export LD_LIBRARY_PATH="/opt/webkitgtk-webrtc/lib:$LD_LIBRARY_PATH"
+            export CGO_CFLAGS="-I/opt/webkitgtk-webrtc/include"
+            export CGO_LDFLAGS="-L/opt/webkitgtk-webrtc/lib"
+            echo -e "${CYAN}🔧 Usando WebKit GTK3 compilado com WebRTC (/opt/webkitgtk-webrtc)${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  WebKit compilado não encontrado, usando versão do sistema${NC}"
+    fi
+    
     check_dependencies
     
     # Limpar
     rm -rf ${BUILD_DIR} ${DIST_DIR}
     mkdir -p ${BUILD_DIR} ${DIST_DIR}
     
-    # Compilar
+    # Compilar com WebKit compilado (se disponível)
     echo -e "${YELLOW}📝 Compilando binário v5.0.0...${NC}"
     go build -ldflags="-s -w" -o ${BUILD_DIR}/${APP_NAME} ./${SOURCE_DIR}
     

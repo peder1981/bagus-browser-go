@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -163,7 +164,7 @@ func (c *Config) SetPassword(password string) error {
 	
 	c.RequirePassword = true
 	c.PasswordHash = hash
-	c.PasswordSalt = salt
+	c.PasswordSalt = base64.StdEncoding.EncodeToString([]byte(salt))
 	
 	return c.Save()
 }

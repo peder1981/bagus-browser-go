@@ -100,18 +100,31 @@ echo ""
 echo "📥 Passo 2/8: Baixando código-fonte do WebKitGTK..."
 echo ""
 
-WEBKIT_DIR="$HOME/webkit-build"
+WEBKIT_DIR="/tmp/webkit-build"
 mkdir -p "$WEBKIT_DIR"
 cd "$WEBKIT_DIR"
+echo "   Diretório de build: $WEBKIT_DIR"
 
-if [ ! -f "webkitgtk-2.48.7.tar.xz" ]; then
+if [ ! -f "webkitgtk-2.48.7.tar.xz" ] || [ ! -s "webkitgtk-2.48.7.tar.xz" ]; then
+    echo "   Removendo arquivo corrompido (se existir)..."
+    rm -f webkitgtk-2.48.7.tar.xz
     echo "   Baixando WebKitGTK 2.48.7..."
-    wget https://webkitgtk.org/releases/webkitgtk-2.48.7.tar.xz
+    wget --continue https://webkitgtk.org/releases/webkitgtk-2.48.7.tar.xz
+    if [ $? -ne 0 ]; then
+        echo "❌ Erro ao baixar WebKitGTK"
+        exit 1
+    fi
 fi
 
 if [ ! -d "webkitgtk-2.48.7" ]; then
     echo "   Extraindo..."
+    rm -rf webkitgtk-2.48.7
     tar -xf webkitgtk-2.48.7.tar.xz
+    if [ $? -ne 0 ]; then
+        echo "❌ Erro ao extrair WebKitGTK"
+        rm -f webkitgtk-2.48.7.tar.xz
+        exit 1
+    fi
 fi
 
 cd webkitgtk-2.48.7
@@ -132,27 +145,26 @@ cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/opt/webkitgtk-webrtc \
     -DPORT=GTK \
-    -DUSE_GTK4=ON \
-    -DENABLE_WEBRTC=ON \
+    -DUSE_GTK4=OFF \
+    -DENABLE_WEB_RTC=ON \
     -DUSE_GSTREAMER_WEBRTC=ON \
     -DUSE_LIBWEBRTC=OFF \
     -DENABLE_INTROSPECTION=OFF \
     -DENABLE_DOCUMENTATION=OFF \
-    -DENABLE_MINIBROWSER=OFF \
+    -DENABLE_MINIBROWSER=ON \
     -DENABLE_GAMEPAD=OFF \
     -DUSE_JPEGXL=OFF \
     -DUSE_AVIF=OFF \
     -DUSE_LIBBACKTRACE=OFF \
-    -DUSE_SOUP2=OFF \
-    -DUSE_GTK4=ON
+    -DUSE_SOUP2=ON
 
 echo ""
 echo "✅ Build configurado!"
 echo ""
 
 # Verificar se WebRTC está habilitado
-if grep -q "ENABLE_WEBRTC:BOOL=ON" CMakeCache.txt; then
-    echo "✅ WebRTC: HABILITADO ⭐"
+if grep -q "USE_GSTREAMER_WEBRTC:BOOL=ON" CMakeCache.txt; then
+    echo "✅ WebRTC (GStreamer): HABILITADO ⭐"
 else
     echo "❌ Erro: WebRTC não foi habilitado!"
     exit 1
@@ -252,7 +264,7 @@ int main(int argc, char **argv) {
 EOF
 
 gcc /tmp/test-webrtc.c -o /tmp/test-webrtc \
-    $(pkg-config --cflags --libs webkitgtk-webrtc-6.0 gtk4) 2>/dev/null
+    $(pkg-config --cflags --libs webkit2gtk-4.1 gtk+-3.0) 2>/dev/null
 
 if /tmp/test-webrtc 2>/dev/null | grep -q "WebRTC enabled: 1"; then
     echo "✅ WebRTC: FUNCIONANDO! ⭐"

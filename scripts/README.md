@@ -146,5 +146,14 @@ cat BUILD.md
 ---
 
 **Sistema:** Unificado  
-**Versão:** 4.5.1  
-**Data:** 23/10/2025
+**Versão:** v5.0.0  
+**Data:** 31/10/2025
+
+## ✅ Scripts Atualizados para v5.0.0
+
+- ✅ `bagus` - Script master (versão 5.0.0)
+- ✅ `run-v5.sh` - Executa binário correto (bagus-browser)
+- ✅ `test-meet.sh` - Testa Google Meet com binário correto
+- ✅ `test-webrtc-local.sh` - Testa WebRTC local com build correto
+- ✅ `benchmark.sh` - Benchmark automático (compatível)
+- ✅ `build-webkit-webrtc.sh` - Build WebRTC (compatível)
