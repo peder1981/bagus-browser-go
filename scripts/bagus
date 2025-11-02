@@ -41,7 +41,10 @@ show_help() {
     echo ""
     echo -e "${CYAN}📦 Build & Instalação:${NC}"
     echo "  build              - Compilar e empacotar (.deb + .tar.gz)"
+    echo "  bundle             - Embarcar dependências no pacote"
+    echo "  bundle-complete    - Build + Bundle + Testes + .deb (COMPLETO)"
     echo "  install            - Build + Instalar localmente"
+    echo "  install-bundled    - Build + Bundle + Instalar .deb bundled"
     echo "  clean              - Limpar builds e temporários"
     echo ""
     echo -e "${CYAN}🚀 Versionamento & Release:${NC}"
@@ -65,8 +68,10 @@ show_help() {
     echo ""
     echo -e "${YELLOW}Exemplos:${NC}"
     echo "  ./bagus build                    # Apenas compilar"
+    echo "  ./bagus bundle-complete          # Build + Bundle + Testes + .deb"
     echo "  ./bagus install                  # Compilar e instalar"
-    echo "  ./bagus release 4.5.1            # Release completa"
+    echo "  ./bagus install-bundled          # Build + Bundle + Instalar"
+    echo "  ./bagus release 4.5.1            # Release completa (com opção bundled)"
     echo "  ./bagus publish                  # Publicar no GitHub"
     echo ""
 }
@@ -269,6 +274,78 @@ EOF
     echo -e "${CYAN}📦 Pacotes criados:${NC}"
     ls -lh ${DIST_DIR}/
     echo ""
+    
+    # Sugerir bundling de dependências
+    echo -e "${YELLOW}💡 Dica: Para embarcar dependências, execute:${NC}"
+    echo "  ./scripts/bundle-dependencies.sh build/bundle"
+    echo ""
+}
+
+# Bundle de dependências
+cmd_bundle() {
+    echo -e "${BLUE}📦 Embarcando dependências...${NC}"
+    
+    # Verificar se script existe
+    if [ ! -f "scripts/bundle-dependencies.sh" ]; then
+        echo -e "${RED}❌ Script bundle-dependencies.sh não encontrado${NC}"
+        exit 1
+    fi
+    
+    # Executar script
+    bash scripts/bundle-dependencies.sh ${BUILD_DIR}/bundle
+    
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo -e "${GREEN}✅ Dependências embarcadas com sucesso!${NC}"
+        echo ""
+        echo -e "${CYAN}📊 Próximos passos:${NC}"
+        echo "  1. Testar bundle: ./bagus test-bundle"
+        echo "  2. Criar .deb: ./bagus build-deb-bundled"
+        echo "  3. Ou tudo junto: ./bagus bundle-complete"
+        echo ""
+    else
+        echo -e "${RED}❌ Erro ao embarcar dependências${NC}"
+        exit 1
+    fi
+}
+
+# Bundle completo (Build + Bundle + Testes + .deb)
+cmd_bundle_complete() {
+    echo -e "${PURPLE}🚀 Iniciando workflow completo de bundling...${NC}"
+    echo ""
+    
+    # Passo 1: Build
+    echo -e "${BLUE}[1/4] Compilando...${NC}"
+    cmd_build || exit 1
+    echo ""
+    
+    # Passo 2: Bundle
+    echo -e "${BLUE}[2/4] Embarcando dependências...${NC}"
+    bash scripts/bundle-dependencies.sh ${BUILD_DIR}/bundle || exit 1
+    echo ""
+    
+    # Passo 3: Testes
+    echo -e "${BLUE}[3/4] Testando bundle...${NC}"
+    bash scripts/test-bundled.sh || exit 1
+    echo ""
+    
+    # Passo 4: .deb bundled
+    echo -e "${BLUE}[4/4] Criando .deb bundled...${NC}"
+    bash scripts/build-deb-bundled.sh ${CURRENT_VERSION} || exit 1
+    echo ""
+    
+    echo -e "${GREEN}╔════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║   ✅ Workflow Completo Finalizado!    ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "${CYAN}📦 Pacotes disponíveis:${NC}"
+    ls -lh ${DIST_DIR}/*.deb
+    echo ""
+    echo -e "${CYAN}🚀 Próximos passos:${NC}"
+    echo "  1. Instalar: sudo dpkg -i ${DIST_DIR}/${APP_NAME}_${CURRENT_VERSION}_amd64_bundled.deb"
+    echo "  2. Executar: bagus-browser"
+    echo "  3. Publicar: ./bagus publish"
+    echo ""
 }
 
 # Instalar
@@ -287,6 +364,30 @@ cmd_install() {
     echo -e "${CYAN}Como executar:${NC}"
     echo "  • Terminal: bagus-browser"
     echo "  • Menu: Aplicações → Internet → Bagus Browser"
+    echo ""
+}
+
+# Instalar versão bundled (com dependências embarcadas)
+cmd_install_bundled() {
+    if [ ! -f "${DIST_DIR}/${APP_NAME}_${CURRENT_VERSION}_amd64_bundled.deb" ]; then
+        echo -e "${YELLOW}📦 Pacote bundled não encontrado, criando...${NC}"
+        cmd_bundle_complete
+    fi
+    
+    echo -e "${BLUE}📥 Instalando Bagus Browser (versão bundled)...${NC}"
+    sudo dpkg -i ${DIST_DIR}/${APP_NAME}_${CURRENT_VERSION}_amd64_bundled.deb || sudo apt-get install -f -y
+    
+    echo ""
+    echo -e "${GREEN}✅ Instalado com sucesso!${NC}"
+    echo ""
+    echo -e "${CYAN}Como executar:${NC}"
+    echo "  • Terminal: bagus-browser"
+    echo "  • Menu: Aplicações → Internet → Bagus Browser"
+    echo ""
+    echo -e "${CYAN}ℹ️  Informações:${NC}"
+    echo "  • Dependências embarcadas em: /usr/lib/bagus-browser/bundle/"
+    echo "  • Sem dependências externas necessárias"
+    echo "  • Compatível com qualquer distribuição Linux (glibc >= 2.35)"
     echo ""
 }
 
@@ -344,6 +445,15 @@ cmd_release() {
     # Build
     CURRENT_VERSION=$NEW_VERSION
     cmd_build
+    
+    # Perguntar se quer criar .deb bundled
+    echo ""
+    read -p "Deseja criar .deb com dependências embarcadas? (s/N): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Ss]$ ]]; then
+        echo -e "${BLUE}📦 Criando .deb bundled...${NC}"
+        cmd_bundle_complete
+    fi
     
     # Commit da versão
     git add scripts/bagus
@@ -568,8 +678,17 @@ main() {
         build)
             cmd_build
             ;;
+        bundle)
+            cmd_bundle
+            ;;
+        bundle-complete)
+            cmd_bundle_complete
+            ;;
         install)
             cmd_install
+            ;;
+        install-bundled)
+            cmd_install_bundled
             ;;
         clean)
             cmd_clean
