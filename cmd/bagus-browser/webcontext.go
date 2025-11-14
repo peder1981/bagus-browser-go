@@ -48,11 +48,11 @@ static WebKitWebView* create_related_webview(WebKitWebView* webview) {
     // Criar novo WebView com o mesmo contexto
     WebKitWebContext* context = webkit_web_view_get_context(webview);
     WebKitWebView* new_webview = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(context));
-    
+
     // Copiar settings do original
     WebKitSettings* settings = webkit_web_view_get_settings(webview);
     webkit_web_view_set_settings(new_webview, settings);
-    
+
     return new_webview;
 }
 
@@ -82,39 +82,39 @@ static void connect_decide_policy_handler(WebKitWebView* webview) {
 // Configurar settings para WebView com suporte a multimídia
 static void configure_webview_multimedia(WebKitWebView* webview) {
     WebKitSettings* settings = webkit_web_view_get_settings(webview);
-    
+
     // Habilitar JavaScript (essencial)
     webkit_settings_set_enable_javascript(settings, TRUE);
-    
+
     // Habilitar WebGL (para aplicações modernas)
     webkit_settings_set_enable_webgl(settings, TRUE);
-    
+
     // Habilitar WebAudio (para áudio avançado)
     webkit_settings_set_enable_webaudio(settings, TRUE);
-    
+
     // Habilitar MediaStream (para webcam/microfone - Google Meet)
     webkit_settings_set_enable_media_stream(settings, TRUE);
-    
+
     // Habilitar WebRTC (RTCPeerConnection - ESSENCIAL para Google Meet)
     webkit_settings_set_enable_webrtc(settings, TRUE);
-    
+
     // Habilitar EncryptedMedia (para DRM - Netflix, etc)
     webkit_settings_set_enable_encrypted_media(settings, TRUE);
-    
+
     // Permitir modal dialogs (alguns sites precisam)
     webkit_settings_set_allow_modal_dialogs(settings, TRUE);
-    
+
     // Habilitar fullscreen (para vídeos)
     webkit_settings_set_enable_fullscreen(settings, TRUE);
-    
+
     // Habilitar aceleração de hardware
     webkit_settings_set_hardware_acceleration_policy(settings, WEBKIT_HARDWARE_ACCELERATION_POLICY_ALWAYS);
-    
+
     // Permitir JavaScript abrir janelas automaticamente (necessário para Google Meet)
     webkit_settings_set_javascript_can_open_windows_automatically(settings, TRUE);
-    
+
     // User agent moderno (compatibilidade)
-    webkit_settings_set_user_agent(settings, 
+    webkit_settings_set_user_agent(settings,
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 }
 
@@ -134,42 +134,42 @@ import (
 )
 
 // goPermissionRequestCallback trata pedidos de permissão (webcam, microfone, etc)
+//
 //export goPermissionRequestCallback
 func goPermissionRequestCallback(request *C.WebKitPermissionRequest) C.gboolean {
 	// Por enquanto, aceitar automaticamente todas as permissões
 	// TODO: Adicionar diálogo de confirmação para o usuário
 	log.Println("🔐 Permissão solicitada - concedendo automaticamente")
-	
+
 	// Permitir a permissão
 	C.webkit_permission_request_allow(request)
-	
+
 	return C.TRUE
 }
 
 // goCreateCallback trata solicitações de criar nova janela (popups, Google Meet, etc)
+//
 //export goCreateCallback
 func goCreateCallback(webview *C.WebKitWebView, navigationAction *C.WebKitNavigationAction) *C.WebKitWebView {
-	log.Println("🎆 Nova janela solicitada - criando WebView relacionado")
-	
-	// Criar novo WebView relacionado ao original
-	// Isso é necessário para popups do Google Meet funcionarem
-	newWebView := C.create_related_webview(webview)
-	
-	log.Println("✅ Novo WebView criado para popup")
-	return newWebView
+	log.Println("🎆 Nova janela solicitada - popup será bloqueado (não criando nova janela)")
+	// Para evitar crashes internos do WebKit em certos sites (ex: suporte Totvs),
+	// não vamos criar um novo WebView aqui. Retornar nil instrui o WebKit a não abrir
+	// uma nova janela/popup.
+	return nil
 }
 
 // goDecidePolicyCallback trata decisões de navegação
+//
 //export goDecidePolicyCallback
 func goDecidePolicyCallback(webview *C.WebKitWebView, decision *C.WebKitPolicyDecision, decisionType C.WebKitPolicyDecisionType) C.gboolean {
 	// WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION = 0
 	// WEBKIT_POLICY_DECISION_TYPE_NEW_WINDOW_ACTION = 1
 	// WEBKIT_POLICY_DECISION_TYPE_RESPONSE = 2
-	
+
 	if decisionType == 1 { // NEW_WINDOW_ACTION
 		log.Println("🪟 Solicitação de nova janela detectada")
 	}
-	
+
 	// Permitir todas as navegações
 	C.webkit_policy_decision_use(decision)
 	return C.TRUE
@@ -190,23 +190,23 @@ func GetDefaultWebContext() *WebContext {
 // Initialize inicializa contexto com configurações
 func (wc *WebContext) Initialize(config *Config, downloadPath string) {
 	log.Println("🌐 Inicializando WebContext...")
-	
+
 	// Configurar persistência de cookies
 	setupCookiePersistence(unsafe.Pointer(wc.cContext), config)
-	
+
 	// Configurar cache de vídeos
 	setupVideoCache(unsafe.Pointer(wc.cContext), config)
-	
+
 	// Configurar suporte a multimídia
 	C.setup_multimedia_support(wc.cContext)
 	log.Println("🎬 Suporte a multimídia habilitado (Meet, YouTube Music, etc)")
-	
+
 	// Configurar pasta de downloads
 	cDownloadPath := C.CString(downloadPath)
 	defer C.free(unsafe.Pointer(cDownloadPath))
 	C.setup_download_directory(wc.cContext, cDownloadPath)
 	log.Printf("📁 Pasta de downloads configurada: %s", downloadPath)
-	
+
 	log.Println("✅ WebContext inicializado")
 }
 

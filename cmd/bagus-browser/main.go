@@ -7,24 +7,24 @@ package main
 // Configurar WebView com segurança
 static void configure_webview_security(WebKitWebView* webview) {
     WebKitSettings* settings = webkit_web_view_get_settings(webview);
-    
+
     // JavaScript necessário para sites modernos
     webkit_settings_set_enable_javascript(settings, TRUE);
-    
+
     // Desabilitar plugins (segurança)
     webkit_settings_set_enable_plugins(settings, FALSE);
-    
+
     // Desabilitar Java (segurança)
     webkit_settings_set_enable_java(settings, FALSE);
-    
+
     // User agent customizado
-    webkit_settings_set_user_agent(settings, 
+    webkit_settings_set_user_agent(settings,
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Bagus/4.0");
-    
+
     // Habilitar proteções
     webkit_settings_set_enable_dns_prefetching(settings, FALSE);
     webkit_settings_set_enable_page_cache(settings, FALSE);
-    
+
     // Habilitar recursos de edição (necessário para paste de imagens)
     webkit_settings_set_enable_write_console_messages_to_stdout(settings, TRUE);
     webkit_settings_set_javascript_can_access_clipboard(settings, TRUE);
@@ -128,8 +128,10 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-
 )
+
+// Browser global para permitir que callbacks de popup associem novos WebViews a abas reais
+var globalBrowser *Browser
 
 // WebView encapsula WebKitWebView
 type WebView struct {
@@ -146,7 +148,7 @@ func NewWebView() (*WebView, error) {
 
 	// Converter para GtkWidget
 	gtkWidget := (*C.GtkWidget)(unsafe.Pointer(cWebView))
-	
+
 	// Criar gtk.Widget do gotk3
 	obj := &glib.Object{glib.ToGObject(unsafe.Pointer(gtkWidget))}
 	widget := &gtk.Widget{glib.InitiallyUnowned{obj}}
@@ -155,6 +157,22 @@ func NewWebView() (*WebView, error) {
 		cWebView: cWebView,
 		widget:   widget,
 	}, nil
+}
+
+// NewWebViewFromC cria um WebView Go a partir de um WebKitWebView já existente (por exemplo, popups)
+func NewWebViewFromC(cWebView *C.WebKitWebView) *WebView {
+	if cWebView == nil {
+		return nil
+	}
+
+	gtkWidget := (*C.GtkWidget)(unsafe.Pointer(cWebView))
+	obj := &glib.Object{glib.ToGObject(unsafe.Pointer(gtkWidget))}
+	widget := &gtk.Widget{glib.InitiallyUnowned{obj}}
+
+	return &WebView{
+		cWebView: cWebView,
+		widget:   widget,
+	}
 }
 
 // Widget retorna o gtk.Widget
@@ -239,14 +257,14 @@ func (w *WebView) ZoomReset() {
 func (w *WebView) FindText(text string, caseSensitive bool) {
 	cText := C.CString(text)
 	defer C.free(unsafe.Pointer(cText))
-	
+
 	var cCaseSensitive C.gboolean
 	if caseSensitive {
 		cCaseSensitive = C.gboolean(1)
 	} else {
 		cCaseSensitive = C.gboolean(0)
 	}
-	
+
 	C.find_text(w.cWebView, cText, cCaseSensitive)
 }
 
@@ -330,7 +348,7 @@ func main() {
 	} else {
 		log.Printf("📁 Downloads: %s", downloadManager.GetDownloadPath())
 	}
-	
+
 	// Inicializar WebContext com configurações e pasta de downloads
 	webContext := GetDefaultWebContext()
 	if downloadManager != nil {
@@ -340,28 +358,29 @@ func main() {
 	}
 
 	browser := NewBrowser()
+	globalBrowser = browser
 	browser.config = cfg
 	browser.downloadManager = downloadManager
-	
+
 	// Atualizar PrivacyManager com configurações do arquivo
 	browser.privacyManager = NewPrivacyManagerFromConfig(cfg)
 	browser.privacyManager.LogPrivacyInfo()
-	
+
 	// Conectar handler de downloads ao WebContext (não ao WebView!)
 	if downloadManager != nil {
 		browser.setupGlobalDownloadHandler(webContext)
 	}
-	
+
 	// Processar argumentos de linha de comando (URLs)
 	args := os.Args[1:]
 	var urlsToOpen []string
-	
+
 	for _, arg := range args {
 		// Ignorar flags
 		if strings.HasPrefix(arg, "-") {
 			continue
 		}
-		
+
 		// Verificar se é URL válida
 		if strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "https://") || strings.HasPrefix(arg, "file://") {
 			urlsToOpen = append(urlsToOpen, arg)
@@ -372,9 +391,9 @@ func main() {
 			log.Printf("🔗 Domínio detectado: %s (adicionando https://)", arg)
 		}
 	}
-	
+
 	browser.Show()
-	
+
 	// Abrir URLs após mostrar janela
 	if len(urlsToOpen) > 0 {
 		glib.IdleAdd(func() bool {
@@ -428,13 +447,13 @@ func NewBrowser() *Browser {
 	if err != nil {
 		log.Fatal("Erro ao criar crypto:", err)
 	}
-	
+
 	// Criar BookmarkManager
 	bookmarkManager, err := NewBookmarkManager(crypto)
 	if err != nil {
 		log.Printf("⚠️  Erro ao criar bookmark manager: %v", err)
 	}
-	
+
 	// Criar DownloadManager
 	downloadManager, err := NewDownloadManager()
 	if err != nil {
@@ -442,13 +461,13 @@ func NewBrowser() *Browser {
 	} else {
 		log.Printf("📁 Downloads: %s", downloadManager.GetDownloadPath())
 	}
-	
+
 	// Criar SessionManager
 	sessionManager, err := NewSessionManager(crypto)
 	if err != nil {
 		log.Printf("⚠️  Erro ao criar session manager: %v", err)
 	}
-	
+
 	browser := &Browser{
 		window:          win,
 		notebook:        notebook,
@@ -461,13 +480,13 @@ func NewBrowser() *Browser {
 		downloadManager: downloadManager,
 		sessionManager:  sessionManager,
 	}
-	
+
 	// Logar informações de privacidade
 	browser.privacyManager.LogPrivacyInfo()
 
 	// Criar menu
 	menuBar := browser.createMenuBar()
-	
+
 	// Criar toolbar
 	toolbar := browser.createToolbar()
 
@@ -484,7 +503,7 @@ func NewBrowser() *Browser {
 
 	// Restaurar sessão ou criar primeira aba
 	browser.restoreSession()
-	
+
 	// Conectar sinal de fechamento para salvar sessão
 	win.Connect("destroy", func() {
 		browser.saveSession()
@@ -497,113 +516,113 @@ func NewBrowser() *Browser {
 // createMenuBar cria a barra de menu
 func (b *Browser) createMenuBar() *gtk.MenuBar {
 	menuBar, _ := gtk.MenuBarNew()
-	
+
 	// Menu Arquivo
 	menuArquivo, _ := gtk.MenuItemNewWithLabel("Arquivo")
 	menuArquivoSub, _ := gtk.MenuNew()
-	
+
 	itemNovaAba, _ := gtk.MenuItemNewWithLabel("Nova Aba (Ctrl+T)")
 	itemNovaAba.Connect("activate", func() {
 		b.NewTab("https://duckduckgo.com")
 	})
 	menuArquivoSub.Append(itemNovaAba)
-	
+
 	itemFecharAba, _ := gtk.MenuItemNewWithLabel("Fechar Aba (Ctrl+W)")
 	itemFecharAba.Connect("activate", func() {
 		b.CloseCurrentTab()
 	})
 	menuArquivoSub.Append(itemFecharAba)
-	
+
 	separador1, _ := gtk.SeparatorMenuItemNew()
 	menuArquivoSub.Append(separador1)
-	
+
 	itemSair, _ := gtk.MenuItemNewWithLabel("Sair (Ctrl+Q)")
 	itemSair.Connect("activate", func() {
 		gtk.MainQuit()
 	})
 	menuArquivoSub.Append(itemSair)
-	
+
 	menuArquivo.SetSubmenu(menuArquivoSub)
 	menuBar.Append(menuArquivo)
-	
+
 	// Menu Navegação
 	menuNav, _ := gtk.MenuItemNewWithLabel("Navegação")
 	menuNavSub, _ := gtk.MenuNew()
-	
+
 	itemVoltar, _ := gtk.MenuItemNewWithLabel("Voltar (Alt+←)")
 	itemVoltar.Connect("activate", func() {
 		b.GoBack()
 	})
 	menuNavSub.Append(itemVoltar)
-	
+
 	itemAvancar, _ := gtk.MenuItemNewWithLabel("Avançar (Alt+→)")
 	itemAvancar.Connect("activate", func() {
 		b.GoForward()
 	})
 	menuNavSub.Append(itemAvancar)
-	
+
 	itemRecarregar, _ := gtk.MenuItemNewWithLabel("Recarregar (F5)")
 	itemRecarregar.Connect("activate", func() {
 		b.Reload()
 	})
 	menuNavSub.Append(itemRecarregar)
-	
+
 	menuNav.SetSubmenu(menuNavSub)
 	menuBar.Append(menuNav)
-	
+
 	// Menu Favoritos
 	menuFavoritos, _ := gtk.MenuItemNewWithLabel("Favoritos")
 	menuFavoritosSub, _ := gtk.MenuNew()
-	
+
 	itemAdicionarFavorito, _ := gtk.MenuItemNewWithLabel("Adicionar Favorito (Ctrl+D)")
 	itemAdicionarFavorito.Connect("activate", func() {
 		b.AddBookmark()
 	})
 	menuFavoritosSub.Append(itemAdicionarFavorito)
-	
+
 	itemGerenciarFavoritos, _ := gtk.MenuItemNewWithLabel("Gerenciar Favoritos (Ctrl+Shift+B)")
 	itemGerenciarFavoritos.Connect("activate", func() {
 		b.ShowBookmarks()
 	})
 	menuFavoritosSub.Append(itemGerenciarFavoritos)
-	
+
 	menuFavoritos.SetSubmenu(menuFavoritosSub)
 	menuBar.Append(menuFavoritos)
-	
+
 	// Menu Ferramentas
 	menuFerramentas, _ := gtk.MenuItemNewWithLabel("Ferramentas")
 	menuFerramentasSub, _ := gtk.MenuNew()
-	
+
 	itemBuscar, _ := gtk.MenuItemNewWithLabel("Buscar na Página (Ctrl+F)")
 	itemBuscar.Connect("activate", func() {
 		b.ShowFindBar()
 	})
 	menuFerramentasSub.Append(itemBuscar)
-	
+
 	separador2, _ := gtk.SeparatorMenuItemNew()
 	menuFerramentasSub.Append(separador2)
-	
+
 	itemZoomIn, _ := gtk.MenuItemNewWithLabel("Aumentar Zoom (Ctrl++)")
 	itemZoomIn.Connect("activate", func() {
 		b.ZoomIn()
 	})
 	menuFerramentasSub.Append(itemZoomIn)
-	
+
 	itemZoomOut, _ := gtk.MenuItemNewWithLabel("Diminuir Zoom (Ctrl+-)")
 	itemZoomOut.Connect("activate", func() {
 		b.ZoomOut()
 	})
 	menuFerramentasSub.Append(itemZoomOut)
-	
+
 	itemZoomReset, _ := gtk.MenuItemNewWithLabel("Zoom 100% (Ctrl+0)")
 	itemZoomReset.Connect("activate", func() {
 		b.ZoomReset()
 	})
 	menuFerramentasSub.Append(itemZoomReset)
-	
+
 	separador3, _ := gtk.SeparatorMenuItemNew()
 	menuFerramentasSub.Append(separador3)
-	
+
 	itemDownloads, _ := gtk.MenuItemNewWithLabel("Downloads (Ctrl+J)")
 	itemDownloads.Connect("activate", func() {
 		if b.downloadManager != nil {
@@ -611,42 +630,42 @@ func (b *Browser) createMenuBar() *gtk.MenuBar {
 		}
 	})
 	menuFerramentasSub.Append(itemDownloads)
-	
+
 	menuFerramentas.SetSubmenu(menuFerramentasSub)
 	menuBar.Append(menuFerramentas)
-	
+
 	// Menu Editar
 	menuEditar, _ := gtk.MenuItemNewWithLabel("Editar")
 	menuEditarSub, _ := gtk.MenuNew()
-	
+
 	itemConfiguracoes, _ := gtk.MenuItemNewWithLabel("Configurações (Ctrl+,)")
 	itemConfiguracoes.Connect("activate", func() {
 		b.showSettingsDialog()
 	})
 	menuEditarSub.Append(itemConfiguracoes)
-	
+
 	menuEditar.SetSubmenu(menuEditarSub)
 	menuBar.Append(menuEditar)
-	
+
 	// Menu Ajuda
 	menuAjuda, _ := gtk.MenuItemNewWithLabel("Ajuda")
 	menuAjudaSub, _ := gtk.MenuNew()
-	
+
 	itemVersao, _ := gtk.MenuItemNewWithLabel("Versão")
 	itemVersao.Connect("activate", func() {
 		b.showVersionDialog()
 	})
 	menuAjudaSub.Append(itemVersao)
-	
+
 	itemSobre, _ := gtk.MenuItemNewWithLabel("Sobre")
 	itemSobre.Connect("activate", func() {
 		b.showAboutDialog()
 	})
 	menuAjudaSub.Append(itemSobre)
-	
+
 	menuAjuda.SetSubmenu(menuAjudaSub)
 	menuBar.Append(menuAjuda)
-	
+
 	return menuBar
 }
 
@@ -856,14 +875,14 @@ func (b *Browser) setupKeyboardShortcuts() {
 			}
 			return true
 		}
-		
+
 		// Ctrl+, - Configurações
 		if ctrlPressed && keyVal == gdk.KEY_comma {
 			log.Println("⌨️  Ctrl+, - Configurações")
 			b.showSettingsDialog()
 			return true
 		}
-		
+
 		// Ctrl+Q - Sair
 		if ctrlPressed && (keyVal == gdk.KEY_q || keyVal == gdk.KEY_Q) {
 			log.Println("⌨️  Ctrl+Q - Sair")
@@ -921,7 +940,7 @@ func (b *Browser) NewTab(url string) {
 		log.Printf("❌ Erro ao criar WebView: %v", err)
 		return
 	}
-	
+
 	// Configurar suporte a multimídia (Meet, YouTube Music, etc)
 	ConfigureWebViewMultimedia(webView)
 
@@ -960,14 +979,14 @@ func (b *Browser) NewTab(url string) {
 	webView.widget.Connect("notify::title", func() {
 		title := webView.GetTitle()
 		uri := webView.GetURI()
-		
+
 		// Usar título se disponível, senão usar URI
 		if title != "" && title != "about:blank" {
 			tabLabel.SetText(title)
 		} else if uri != "" && uri != "about:blank" {
 			tabLabel.SetText(uri)
 		}
-		
+
 		// Atualizar URL entry se for a aba atual
 		if b.notebook.GetCurrentPage() == pageNum {
 			if uri != "" {
@@ -984,7 +1003,7 @@ func (b *Browser) NewTab(url string) {
 			if webView.GetTitle() == "" {
 				tabLabel.SetText(uri)
 			}
-			
+
 			// Atualizar URL entry se for a aba atual
 			if b.notebook.GetCurrentPage() == pageNum {
 				b.urlEntry.SetText(uri)
@@ -993,17 +1012,17 @@ func (b *Browser) NewTab(url string) {
 	})
 
 	b.window.ShowAll()
-	
+
 	// Garantir que a aba seja mostrada antes de focar
 	b.notebook.SetCurrentPage(pageNum)
-	
+
 	// Focar ANTES de carregar (para não perder foco)
 	b.urlEntry.GrabFocus()
 	b.urlEntry.SelectRegion(0, -1)
-	
+
 	// Carregar URL DEPOIS de focar
 	webView.LoadURI(url)
-	
+
 	// Múltiplas tentativas de foco (caso o WebView roube)
 	glib.IdleAdd(func() bool {
 		if b.notebook.GetCurrentPage() == pageNum {
@@ -1012,7 +1031,7 @@ func (b *Browser) NewTab(url string) {
 		}
 		return false
 	})
-	
+
 	glib.TimeoutAdd(50, func() bool {
 		if b.notebook.GetCurrentPage() == pageNum {
 			b.urlEntry.GrabFocus()
@@ -1020,7 +1039,7 @@ func (b *Browser) NewTab(url string) {
 		}
 		return false
 	})
-	
+
 	glib.TimeoutAdd(100, func() bool {
 		if b.notebook.GetCurrentPage() == pageNum {
 			b.urlEntry.GrabFocus()
@@ -1030,6 +1049,64 @@ func (b *Browser) NewTab(url string) {
 	})
 
 	log.Printf("✅ Aba %d criada - Carregando: %s", tabIndex+1, url)
+}
+
+func (b *Browser) AttachPopupWebView(webView *WebView) {
+	if webView == nil {
+		return
+	}
+
+	scrolled, err := gtk.ScrolledWindowNew(nil, nil)
+	if err != nil {
+		log.Printf("❌ Erro ao criar scrolled window para popup: %v", err)
+		return
+	}
+	scrolled.Add(webView.Widget())
+
+	tabLabel, _ := gtk.LabelNew("Carregando...")
+
+	tab := &Tab{
+		webView: webView,
+		label:   tabLabel,
+	}
+
+	b.tabs = append(b.tabs, tab)
+	tabIndex := len(b.tabs) - 1
+
+	pageNum := b.notebook.AppendPage(scrolled, tabLabel)
+	b.notebook.SetCurrentPage(pageNum)
+
+	webView.widget.Connect("notify::title", func() {
+		title := webView.GetTitle()
+		uri := webView.GetURI()
+		if title != "" && title != "about:blank" {
+			tabLabel.SetText(title)
+		} else if uri != "" && uri != "about:blank" {
+			tabLabel.SetText(uri)
+		}
+		if b.notebook.GetCurrentPage() == pageNum {
+			if uri != "" {
+				b.urlEntry.SetText(uri)
+			}
+		}
+	})
+
+	webView.widget.Connect("notify::uri", func() {
+		uri := webView.GetURI()
+		if uri != "" && uri != "about:blank" {
+			if webView.GetTitle() == "" {
+				tabLabel.SetText(uri)
+			}
+			if b.notebook.GetCurrentPage() == pageNum {
+				b.urlEntry.SetText(uri)
+			}
+		}
+	})
+
+	b.window.ShowAll()
+	b.notebook.SetCurrentPage(pageNum)
+
+	log.Printf("✅ Aba %d criada a partir de popup", tabIndex+1)
 }
 
 // getCurrentWebView retorna o WebView da aba atual
@@ -1050,7 +1127,7 @@ func (b *Browser) Navigate(input string) {
 
 	// Sanitizar input
 	input = SanitizeInput(input)
-	
+
 	// Validar e processar URL
 	validURL, err := b.validator.ValidateAndSanitize(input)
 	if err != nil {
@@ -1106,10 +1183,10 @@ func (b *Browser) CloseCurrentTab() {
 		if tab.webView != nil {
 			// Parar carregamento e liberar recursos
 			stopLoading(tab.webView)
-			
+
 			uri := tab.webView.GetURI()
 			title := tab.webView.GetTitle()
-			
+
 			// Não salvar abas vazias ou about:blank
 			if uri != "" && uri != "about:blank" {
 				closedTab := ClosedTab{
@@ -1117,22 +1194,22 @@ func (b *Browser) CloseCurrentTab() {
 					Title: title,
 				}
 				b.closedTabs = append(b.closedTabs, closedTab)
-				
+
 				// Limitar histórico a 10 abas
 				if len(b.closedTabs) > 10 {
 					b.closedTabs = b.closedTabs[1:]
 				}
-				
+
 				log.Printf("💾 Aba salva no histórico: %s", title)
 			}
 		}
-		
+
 		// Remover do slice
 		b.tabs = append(b.tabs[:pageNum], b.tabs[pageNum+1:]...)
-		
+
 		// Remover da notebook
 		b.notebook.RemovePage(pageNum)
-		
+
 		log.Printf("🗑️  Aba fechada (restam: %d)", b.notebook.GetNPages())
 	}
 }
@@ -1143,11 +1220,11 @@ func (b *Browser) ReopenClosedTab() {
 		log.Println("⚠️  Nenhuma aba fechada para reabrir")
 		return
 	}
-	
+
 	// Pegar última aba fechada
 	lastClosed := b.closedTabs[len(b.closedTabs)-1]
 	b.closedTabs = b.closedTabs[:len(b.closedTabs)-1]
-	
+
 	// Reabrir aba
 	log.Printf("♻️  Reabrindo aba: %s", lastClosed.Title)
 	b.NewTab(lastClosed.URL)
@@ -1190,16 +1267,16 @@ func (b *Browser) ShowFindBar() {
 	dialog.SetTransientFor(b.window)
 	dialog.SetModal(true)
 	dialog.SetDefaultSize(400, 100)
-	
+
 	// Entry para busca
 	entry, _ := gtk.EntryNew()
 	entry.SetPlaceholderText("Digite o texto para buscar...")
-	
+
 	// Botões
 	dialog.AddButton("Próximo", gtk.RESPONSE_ACCEPT)
 	dialog.AddButton("Anterior", gtk.RESPONSE_REJECT)
 	dialog.AddButton("Fechar", gtk.RESPONSE_CLOSE)
-	
+
 	// Adicionar entry ao dialog
 	box, _ := dialog.GetContentArea()
 	box.SetMarginTop(10)
@@ -1207,9 +1284,9 @@ func (b *Browser) ShowFindBar() {
 	box.SetMarginStart(10)
 	box.SetMarginEnd(10)
 	box.PackStart(entry, true, true, 5)
-	
+
 	dialog.ShowAll()
-	
+
 	// Handler para buscar ao digitar
 	entry.Connect("changed", func() {
 		text, _ := entry.GetText()
@@ -1220,11 +1297,11 @@ func (b *Browser) ShowFindBar() {
 			}
 		}
 	})
-	
+
 	// Handler para resposta
 	dialog.Connect("response", func(d *gtk.Dialog, response gtk.ResponseType) {
 		webView := b.getCurrentWebView()
-		
+
 		if webView != nil {
 			switch response {
 			case gtk.RESPONSE_ACCEPT: // Próximo
@@ -1237,7 +1314,7 @@ func (b *Browser) ShowFindBar() {
 			}
 		}
 	})
-	
+
 	dialog.Run()
 	dialog.Destroy()
 }
@@ -1267,7 +1344,6 @@ func (b *Browser) FindPrevious() {
 	}
 }
 
-
 // Print imprime a página atual
 func (b *Browser) Print() {
 	webView := b.getCurrentWebView()
@@ -1283,23 +1359,23 @@ func (b *Browser) AddBookmark() {
 		log.Println("⚠️  Bookmark manager não disponível")
 		return
 	}
-	
+
 	webView := b.getCurrentWebView()
 	if webView == nil {
 		return
 	}
-	
+
 	url := webView.GetURI()
 	title := webView.GetTitle()
-	
+
 	if title == "" {
 		title = url
 	}
-	
+
 	// Verificar se já existe
 	if b.bookmarkManager.Exists(url) {
 		log.Println("⚠️  Favorito já existe")
-		
+
 		// Mostrar mensagem
 		dialog := gtk.MessageDialogNew(b.window, gtk.DIALOG_MODAL,
 			gtk.MESSAGE_INFO, gtk.BUTTONS_OK, "Este site já está nos favoritos!")
@@ -1307,13 +1383,13 @@ func (b *Browser) AddBookmark() {
 		dialog.Destroy()
 		return
 	}
-	
+
 	// Adicionar
 	if err := b.bookmarkManager.Add(title, url); err != nil {
 		log.Printf("❌ Erro ao adicionar favorito: %v", err)
 		return
 	}
-	
+
 	// Mostrar confirmação
 	dialog := gtk.MessageDialogNew(b.window, gtk.DIALOG_MODAL,
 		gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
@@ -1325,25 +1401,25 @@ func (b *Browser) AddBookmark() {
 // ShowBookmarks mostra gerenciador de favoritos
 func (b *Browser) ShowBookmarks() {
 	log.Println("📚 ShowBookmarks() chamado")
-	
+
 	if b.bookmarkManager == nil {
 		log.Println("⚠️  Bookmark manager não disponível")
 		return
 	}
-	
+
 	log.Println("📚 Criando diálogo de favoritos...")
 	dialog, _ := gtk.DialogNew()
 	dialog.SetTitle("Favoritos")
 	dialog.SetTransientFor(b.window)
 	dialog.SetModal(true)
 	dialog.SetDefaultSize(600, 400)
-	
+
 	// Criar lista
 	scrolled, _ := gtk.ScrolledWindowNew(nil, nil)
 	listBox, _ := gtk.ListBoxNew()
 	listBox.SetActivateOnSingleClick(false) // Requer duplo clique
 	scrolled.Add(listBox)
-	
+
 	// Handler para duplo clique na linha
 	listBox.Connect("row-activated", func(lb *gtk.ListBox, row *gtk.ListBoxRow) {
 		index := row.GetIndex()
@@ -1355,7 +1431,7 @@ func (b *Browser) ShowBookmarks() {
 			dialog.Destroy()
 		}
 	})
-	
+
 	// Adicionar favoritos
 	bookmarks := b.bookmarkManager.GetAll()
 	for _, bookmark := range bookmarks {
@@ -1365,13 +1441,13 @@ func (b *Browser) ShowBookmarks() {
 		box.SetMarginBottom(5)
 		box.SetMarginStart(10)
 		box.SetMarginEnd(10)
-		
+
 		// Título
 		label, _ := gtk.LabelNew(bookmark.Title)
 		label.SetHAlign(gtk.ALIGN_START)
 		label.SetEllipsize(3) // Truncar texto longo
 		box.PackStart(label, true, true, 5)
-		
+
 		// Botão abrir
 		btnOpen, _ := gtk.ButtonNewWithLabel("Abrir")
 		url := bookmark.URL
@@ -1381,7 +1457,7 @@ func (b *Browser) ShowBookmarks() {
 			dialog.Destroy()
 		})
 		box.PackStart(btnOpen, false, false, 5)
-		
+
 		// Botão remover
 		btnRemove, _ := gtk.ButtonNewWithLabel("Remover")
 		btnRemove.Connect("clicked", func() {
@@ -1392,18 +1468,18 @@ func (b *Browser) ShowBookmarks() {
 			row.Destroy()
 		})
 		box.PackStart(btnRemove, false, false, 5)
-		
+
 		row.Add(box)
 		listBox.Add(row)
 	}
-	
+
 	// Adicionar ao dialog
 	box, _ := dialog.GetContentArea()
 	box.PackStart(scrolled, true, true, 10)
-	
+
 	// Botão fechar
 	dialog.AddButton("Fechar", gtk.RESPONSE_CLOSE)
-	
+
 	dialog.ShowAll()
 	dialog.Run()
 	dialog.Destroy()
@@ -1413,14 +1489,14 @@ func (b *Browser) ShowBookmarks() {
 func (b *Browser) NextTab() {
 	currentPage := b.notebook.GetCurrentPage()
 	nPages := b.notebook.GetNPages()
-	
+
 	if nPages <= 1 {
 		return
 	}
-	
+
 	nextPage := (currentPage + 1) % nPages
 	b.notebook.SetCurrentPage(nextPage)
-	
+
 	// Atualizar URL entry
 	if nextPage < len(b.tabs) {
 		webView := b.tabs[nextPage].webView
@@ -1431,7 +1507,7 @@ func (b *Browser) NextTab() {
 			}
 		}
 	}
-	
+
 	log.Printf("📑 Aba %d/%d", nextPage+1, nPages)
 }
 
@@ -1439,18 +1515,18 @@ func (b *Browser) NextTab() {
 func (b *Browser) PreviousTab() {
 	currentPage := b.notebook.GetCurrentPage()
 	nPages := b.notebook.GetNPages()
-	
+
 	if nPages <= 1 {
 		return
 	}
-	
+
 	prevPage := currentPage - 1
 	if prevPage < 0 {
 		prevPage = nPages - 1
 	}
-	
+
 	b.notebook.SetCurrentPage(prevPage)
-	
+
 	// Atualizar URL entry
 	if prevPage < len(b.tabs) {
 		webView := b.tabs[prevPage].webView
@@ -1461,21 +1537,21 @@ func (b *Browser) PreviousTab() {
 			}
 		}
 	}
-	
+
 	log.Printf("📑 Aba %d/%d", prevPage+1, nPages)
 }
 
 // GoToTab vai para uma aba específica (0-indexed)
 func (b *Browser) GoToTab(tabNum int) {
 	nPages := b.notebook.GetNPages()
-	
+
 	if tabNum < 0 || tabNum >= nPages {
 		log.Printf("⚠️  Aba %d não existe (total: %d)", tabNum+1, nPages)
 		return
 	}
-	
+
 	b.notebook.SetCurrentPage(tabNum)
-	
+
 	// Atualizar URL entry
 	if tabNum < len(b.tabs) {
 		webView := b.tabs[tabNum].webView
@@ -1486,7 +1562,7 @@ func (b *Browser) GoToTab(tabNum int) {
 			}
 		}
 	}
-	
+
 	log.Printf("📑 Aba %d/%d", tabNum+1, nPages)
 }
 
@@ -1495,15 +1571,15 @@ func (b *Browser) saveSession() {
 	if b.sessionManager == nil {
 		return
 	}
-	
+
 	var tabs []SessionTab
 	currentPage := b.notebook.GetCurrentPage()
-	
+
 	for i, tab := range b.tabs {
 		if tab.webView != nil {
 			uri := tab.webView.GetURI()
 			title := tab.webView.GetTitle()
-			
+
 			// Não salvar abas vazias ou about:blank
 			if uri != "" && uri != "about:blank" {
 				tabs = append(tabs, SessionTab{
@@ -1514,7 +1590,7 @@ func (b *Browser) saveSession() {
 			}
 		}
 	}
-	
+
 	if err := b.sessionManager.Save(tabs); err != nil {
 		log.Printf("❌ Erro ao salvar sessão: %v", err)
 	}
@@ -1527,7 +1603,7 @@ func (b *Browser) restoreSession() {
 		b.NewTab("https://duckduckgo.com")
 		return
 	}
-	
+
 	session, err := b.sessionManager.Load()
 	if err != nil {
 		log.Printf("⚠️  Erro ao carregar sessão: %v", err)
@@ -1535,13 +1611,13 @@ func (b *Browser) restoreSession() {
 		b.NewTab("https://duckduckgo.com")
 		return
 	}
-	
+
 	if len(session.Tabs) == 0 {
 		// Nenhuma aba salva, criar aba padrão
 		b.NewTab("https://duckduckgo.com")
 		return
 	}
-	
+
 	// Restaurar abas
 	log.Printf("📂 Restaurando %d abas...", len(session.Tabs))
 	for _, tab := range session.Tabs {
@@ -1564,20 +1640,20 @@ func (b *Browser) showVersionDialog() {
 		"",
 	)
 	defer dialog.Destroy()
-	
+
 	dialog.SetTitle("Versão do Bagus Browser")
 	dialog.SetMarkup(fmt.Sprintf(
 		"<big><b>Bagus Browser</b></big>\n\n"+
-		"<b>Versão:</b> %s\n"+
-		"<b>Build:</b> Go %s\n"+
-		"<b>WebKit:</b> WebKit2GTK 4.0\n"+
-		"<b>GTK:</b> GTK+ 3.0\n\n"+
-		"<small>Browser minimalista, seguro e privado\n"+
-		"Zero telemetria • Zero rastreamento</small>",
+			"<b>Versão:</b> %s\n"+
+			"<b>Build:</b> Go %s\n"+
+			"<b>WebKit:</b> WebKit2GTK 4.0\n"+
+			"<b>GTK:</b> GTK+ 3.0\n\n"+
+			"<small>Browser minimalista, seguro e privado\n"+
+			"Zero telemetria • Zero rastreamento</small>",
 		"v5.0.0",
 		runtime.Version(),
 	))
-	
+
 	dialog.Run()
 }
 
@@ -1591,24 +1667,24 @@ func (b *Browser) showAboutDialog() {
 		"",
 	)
 	defer dialog.Destroy()
-	
+
 	dialog.SetTitle("Sobre o Bagus Browser")
 	dialog.SetMarkup(
-		"<big><b>🌐 Bagus Browser</b></big>\n\n"+
-		"<b>Browser minimalista, seguro e privado</b>\n\n"+
-		"<b>Características:</b>\n"+
-		"• Zero telemetria e rastreamento\n"+
-		"• Privacidade máxima por padrão\n"+
-		"• Criptografia AES-256-GCM\n"+
-		"• Gerenciamento de downloads robusto\n"+
-		"• Suporte completo a multimídia\n"+
-		"• Google Meet, YouTube Music, Netflix\n"+
-		"• Interface limpa e intuitiva\n\n"+
-		"<b>Desenvolvido com:</b>\n"+
-		"Go • GTK3 • WebKit2GTK\n\n"+
-		"<small>© 2025 Bagus Browser Team\n"+
-		"Licença: MIT</small>",
+		"<big><b>🌐 Bagus Browser</b></big>\n\n" +
+			"<b>Browser minimalista, seguro e privado</b>\n\n" +
+			"<b>Características:</b>\n" +
+			"• Zero telemetria e rastreamento\n" +
+			"• Privacidade máxima por padrão\n" +
+			"• Criptografia AES-256-GCM\n" +
+			"• Gerenciamento de downloads robusto\n" +
+			"• Suporte completo a multimídia\n" +
+			"• Google Meet, YouTube Music, Netflix\n" +
+			"• Interface limpa e intuitiva\n\n" +
+			"<b>Desenvolvido com:</b>\n" +
+			"Go • GTK3 • WebKit2GTK\n\n" +
+			"<small>© 2025 Bagus Browser Team\n" +
+			"Licença: MIT</small>",
 	)
-	
+
 	dialog.Run()
 }
